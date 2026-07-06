@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Module 04 — Idempotency & Safety | xss_mastery</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;900&family=Source+Code+Pro:wght@400;600&family=Lato:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0b0f1a;      --bg2:#111827;    --bg3:#1a2235;
+    --card:#141c2e;    --border:#1e3a5f; --gold:#f5c842;
+    --cyan:#38bdf8;    --teal:#0d9488;   --red:#f87171;
+    --green:#4ade80;   --purple:#a78bfa; --orange:#fb923c;
+    --text:#e2e8f0;    --muted:#7a9bbf;  --code-bg:#060d1a;
+  }
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: 'Lato', sans-serif; line-height: 1.65; margin: 0; padding: 0 0 80px 0; }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 0 28px; }
+  header.hero { background: linear-gradient(180deg, var(--bg2) 0%, var(--bg) 100%); border-bottom: 1px solid var(--border); padding: 48px 0 32px 0; }
+  h1, h2, h3 { font-family: 'Playfair Display', serif; color: var(--text); letter-spacing: 0.01em; }
+  h1 { font-size: 2.3rem; margin: 0 0 8px 0; color: var(--gold); }
+  .kicker { font-family: 'Source Code Pro', monospace; color: var(--cyan); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.12em; }
+  .subtitle { color: var(--muted); font-size: 1.1rem; margin-top: 6px; }
+  h2 { font-size: 1.6rem; margin-top: 56px; padding-bottom: 10px; border-bottom: 2px solid var(--border); color: var(--cyan); }
+  h2 .num { display: inline-block; font-family: 'Source Code Pro', monospace; color: var(--gold); margin-right: 10px; }
+  h3 { color: var(--gold); font-size: 1.15rem; margin-top: 28px; }
+  p { margin: 14px 0; }
+  code, pre, .mono { font-family: 'Source Code Pro', monospace; }
+  pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px; padding: 18px 20px; overflow-x: auto; font-size: 0.87rem; line-height: 1.6; }
+  pre code { background: none; padding: 0; }
+  code { background: var(--bg3); padding: 2px 6px; border-radius: 4px; font-size: 0.88em; }
+  .cm { color: var(--muted); font-style: italic; } .kw { color: var(--purple); } .str { color: var(--green); } .fn { color: var(--cyan); }
+  .prereq-bar { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 22px 0; }
+  .prereq-tag { display: inline-block; background: var(--bg3); border: 1px solid var(--border); color: var(--cyan); text-decoration: none; padding: 6px 14px; border-radius: 20px; font-family: 'Source Code Pro', monospace; font-size: 0.82rem; }
+  .callout { border-left: 4px solid var(--gold); background: var(--card); padding: 18px 22px; border-radius: 6px; margin: 20px 0; }
+  .callout .label { font-family: 'Source Code Pro', monospace; text-transform: uppercase; font-size: 0.72rem; letter-spacing: 0.1em; color: var(--gold); display: block; margin-bottom: 8px; }
+  .callout.gold { border-left-color: var(--gold); } .callout.gold .label { color: var(--gold); }
+  .callout.teal { border-left-color: var(--teal); } .callout.teal .label { color: var(--teal); }
+  .callout.red { border-left-color: var(--red); } .callout.red .label { color: var(--red); }
+  .diagram { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 18px 0; }
+  .diagram .cell { background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+  .diagram .cell h4 { margin: 0 0 8px 0; font-family: 'Playfair Display', serif; font-size: 1.05rem; }
+  .diagram .get h4 { color: var(--red); } .diagram .post h4 { color: var(--green); }
+  .diagram .cell p { margin: 4px 0; font-size: 0.93rem; color: var(--muted); }
+  .diagram .cell .tag { font-family: 'Source Code Pro', monospace; font-size: 0.78rem; color: var(--text); background: var(--bg2); padding: 2px 8px; border-radius: 4px; }
+  .win-box { background: var(--code-bg); border: 1px solid var(--teal); border-radius: 8px; padding: 4px 22px 18px 22px; margin: 18px 0; }
+  .win-box .title { font-family: 'Source Code Pro', monospace; color: var(--teal); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; padding-top: 14px; }
+  .win-box pre { border: none; background: none; padding: 10px 0; margin: 0; }
+  .brain { background: var(--card); border: 2px dashed var(--purple); border-radius: 8px; padding: 20px 24px; margin: 20px 0; }
+  .brain .label { font-family: 'Source Code Pro', monospace; color: var(--purple); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.1em; }
+  .brain .answer { color: var(--muted); margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+  .qa { margin: 20px 0; } .qa .q { color: var(--gold); font-weight: 700; margin-top: 18px; } .qa .a { color: var(--text); margin-top: 6px; }
+  footer { margin-top: 70px; padding-top: 24px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; font-family: 'Source Code Pro', monospace; font-size: 0.88rem; }
+  footer a { color: var(--cyan); text-decoration: none; } footer .disabled { color: var(--muted); }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="kicker">xss_mastery &middot; Module 04</div>
+    <h1>Idempotency & Safety</h1>
+    <div class="subtitle">A counter that goes up before you've clicked anything — and one that doesn't.</div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <h2><span class="num">00</span>Before You Start</h2>
+  <p><strong>Direct prerequisites for this module:</strong></p>
+  <div class="prereq-bar">
+    <a class="prereq-tag" href="../03_forms_and_method_semantics/tutorial.html">Module 03 — Forms & Method Semantics</a>
+  </div>
+  <div class="callout gold">
+    <span class="label">Before You Start</span>
+    You need to be comfortable with the fact that a plain <code>&lt;a href&gt;</code>
+    and a hidden <code>&lt;img src&gt;</code> both fire a real GET request the
+    moment a page loads or is clicked — no confirmation, no "are you sure."
+    Module 03's Brain Exercise (the browser's resubmission warning) already
+    hinted at where this module is going.
+  </div>
+
+  <h2><span class="num">01</span>The Big Analogy</h2>
+  <div class="callout gold">
+    <span class="label">Head First Moment</span>
+    <p>Imagine a restaurant where simply <em>glancing</em> at the dessert menu
+    somehow triggered the kitchen to bake you a cake. Every food critic who
+    walks by, every health inspector doing a routine look-around, every
+    curious passerby peeking through the window — all of them would
+    accidentally cause cakes to get baked, whether they wanted one or not,
+    just by looking. That's insane, because looking at a menu is supposed to
+    be a "safe" act with no consequences. Nobody expects glancing at
+    something to change the kitchen's state.</p>
+    <p>A GET request is that glance. RFC 7231, the specification that
+    defines HTTP methods, literally calls GET a "safe" method — safe
+    specifically meaning it's not supposed to change anything on the server.
+    Browsers, crawlers, link-preview bots, and antivirus scanners all rely
+    on that promise being true, and they issue GET requests constantly and
+    automatically, without asking anyone's permission, because a "glance"
+    is supposed to be free.</p>
+  </div>
+
+  <div class="diagram">
+    <div class="cell get">
+      <h4>The unsafe counter</h4>
+      <p>A plain GET to <code>/unsafe-increment</code> changes server state.
+      Anything that can issue a GET — a link click, a hidden image, a bot —
+      can silently bake the cake.</p>
+      <p class="tag">GET /unsafe-increment &rarr; count++</p>
+    </div>
+    <div class="cell post">
+      <h4>The safe counter</h4>
+      <p>Only a POST to <code>/safe-increment</code> changes state. A GET to
+      the same path gets flatly rejected with 405 — no accidental cake.</p>
+      <p class="tag">POST /safe-increment &rarr; count++</p>
+    </div>
+  </div>
+
+  <h2><span class="num">02</span>The Bug, in One Line</h2>
+  <p>Here's the entire vulnerable route from <code>node/server.js</code>:</p>
+
+  <pre><code><span class="kw">if</span> (path === <span class="str">'/unsafe-increment'</span> && req.method === <span class="str">'GET'</span>) {
+  unsafeCount += 1; <span class="cm">// the entire bug lives in this one line responding to GET</span>
+  res.writeHead(302, { Location: <span class="str">'/'</span> }); <span class="cm">// redirect back so a real click "just works"</span>
+  res.end();
+  <span class="kw">return</span>;
+}</code></pre>
+
+  <p>And the page that ships alongside it contains this, completely hidden
+  from view:</p>
+
+  <pre><code>&lt;!-- fires a real GET the instant this page loads -- zero clicks required --&gt;
+&lt;img src=<span class="str">"/unsafe-increment"</span> style=<span class="str">"display:none"</span> alt=<span class="str">""</span>&gt;</code></pre>
+
+  <div class="callout red">
+    <span class="label">Why this matters</span>
+    This isn't a hypothetical. Real applications have shipped account-deletion
+    or logout actions as plain <code>&lt;a href="/logout"&gt;</code> links —
+    and antivirus software or link-preview bots that pre-fetch every URL on a
+    page have logged users out, or worse, purely by "looking." The fix is
+    never "make the crawler smarter." The fix is always "GET must not change
+    anything," full stop — you cannot negotiate with a search engine's crawler.
+  </div>
+
+  <h2><span class="num">03</span>The Fix, Side by Side</h2>
+  <p>The safe counter's route checks the method and refuses anything that
+  isn't POST:</p>
+
+  <pre><code><span class="kw">if</span> (path === <span class="str">'/safe-increment'</span>) {
+  <span class="kw">if</span> (req.method !== <span class="str">'POST'</span>) {
+    <span class="cm">// fail LOUDLY -- silently ignoring the GET would hide the lesson</span>
+    res.writeHead(405, { <span class="str">'Content-Type'</span>: <span class="str">'text/plain'</span> });
+    res.end(<span class="str">'405 Method Not Allowed -- this endpoint only accepts POST, on purpose\n'</span>);
+    <span class="kw">return</span>;
+  }
+  safeCount += 1;
+  <span class="cm">// ... redirect back, same as the unsafe route</span>
+}</code></pre>
+
+  <p>Notice the safe version needs a real <code>&lt;form method="post"&gt;</code>
+  to trigger it — there is no HTML tag that fires an automatic POST on page
+  load the way <code>&lt;img&gt;</code> fires an automatic GET. That
+  asymmetry is not an accident of HTML design; it's the direct, practical
+  consequence of GET being declared "safe" and POST not being declared safe.</p>
+
+  <h2><span class="num">04</span>Run It on Windows 11</h2>
+  <div class="win-box">
+    <div class="title">Terminal 1</div>
+    <pre><code>cd xss_mastery\modules\04_idempotency_and_safety
+.\run.ps1 -Target run-node</code></pre>
+    <div class="title">Then in your browser</div>
+    <pre><code>Open http://localhost:8000/ and reload it a few times with F5.
+Watch "Unsafe counter" climb by 1 every single reload -- you never clicked the link.
+Watch "Safe counter" stay exactly where it was.</code></pre>
+    <div class="title">Terminal 2 — the crawler simulation</div>
+    <pre><code>.\run.ps1 -Target crawl</code></pre>
+    <div class="title">Expected crawler output</div>
+    <pre><code>Found 4 link(s)/image(s) on the page:
+  - /unsafe-increment
+  - /unsafe-increment
+  - /safe-increment
+  - /
+
+Following every one of them, exactly like a real crawler would...
+
+  fetched /unsafe-increment
+  fetched /unsafe-increment
+  fetched /safe-increment
+  fetched /</code></pre>
+    <p style="color:var(--muted); font-size:0.88rem;">Reload the page afterward: the unsafe counter jumped by 2 (the crawler followed both the visible link and the hidden image). The safe counter did not move — the crawler's GET to <code>/safe-increment</code> got a 405, and crawlers don't submit forms.</p>
+    <div class="title">If you have PHP installed</div>
+    <pre><code>.\run.ps1 -Target run-php</code></pre>
+  </div>
+
+  <h2><span class="num">05</span>Brain Exercise</h2>
+  <div class="brain">
+    <span class="label">Brain Exercise</span>
+    <p>Suppose a teammate "fixes" the unsafe counter like this, without
+    changing the route's HTTP method at all:</p>
+    <pre><code>&lt;a href=<span class="str">"/unsafe-increment"</span> onclick=<span class="str">"return confirm('Are you sure?')"</span>&gt;
+  Click to increment
+&lt;/a&gt;</code></pre>
+    <p>They argue: "Now the user has to confirm before it happens, so it's
+    safe." Does this actually fix the vulnerability this module demonstrated?</p>
+    <div class="answer">
+      <strong>No — and the crawler you just ran proves it in one sentence:
+      the hidden <code>&lt;img src="/unsafe-increment"&gt;</code> never went
+      through that <code>&lt;a&gt;</code> tag at all, so the confirm() dialog
+      never runs for it.</strong> A JavaScript confirmation only intercepts
+      clicks on that specific element — it does nothing to stop a request
+      issued by an <code>&lt;img&gt;</code> tag, a crawler, a prefetcher, or
+      literally anyone typing the URL directly into a browser or curl. The
+      confirmation dialog is a UI nicety layered on top of a link; it is not
+      a property of the URL itself, and the URL is still just as "safe to
+      GET with no side effects, right?" to everything that isn't a human
+      reading a JavaScript dialog box. The only real fix is the one this
+      module made: refuse to mutate state on anything but POST.
+    </div>
+  </div>
+
+  <h2><span class="num">06</span>There Are No Dumb Questions</h2>
+  <div class="qa">
+    <div class="q">Q: Couldn't I just block known bots by checking the User-Agent header?</div>
+    <div class="a">A: No — User-Agent is just a string the client sends you, and it's trivial to fake or omit. More importantly, this module's own hidden `<img>` tag proves the attack doesn't require a "bot" at all: an ordinary human's ordinary browser, loading an ordinary page, fires the GET. There's no User-Agent to distinguish, because the "attacker" is just... a web page.</div>
+
+    <div class="q">Q: Is DELETE or PUT automatically safe from this, since they're not GET?</div>
+    <div class="a">A: DELETE and PUT are not "safe" per RFC 7231 either — only GET, HEAD, OPTIONS, and TRACE are. But DELETE and PUT ARE idempotent (calling them twice has the same effect as calling them once), which GET is also supposed to be. The property this module cares about most is "safe" specifically — the guarantee that simply fetching a resource causes no side effect — and only GET (and HEAD) carry that guarantee. PUT and DELETE are expected to change things; the difference is that browsers, crawlers, and `<img>` tags don't issue PUT or DELETE automatically the way they issue GET.</div>
+
+    <div class="q">Q: If this is such a well-known problem, why does it still happen in real apps?</div>
+    <div class="a">A: Usually because a GET-triggered action feels convenient during development — a plain link is less code than a form and a POST handler — and the bug doesn't announce itself until a crawler, an email client's link-preview feature, or a corporate security scanner stumbles onto the URL. It's a bug that's invisible until exactly the kind of automated GET-issuing tool this module simulated shows up.</div>
+  </div>
+
+  <h2><span class="num">07</span>What's Next</h2>
+  <div class="callout teal">
+    <span class="label">What's Next</span>
+    Module 05 — <strong>Reflected XSS via GET</strong> — is where this
+    course's real subject begins. You now understand that a GET request can
+    be fired by anything, without confirmation, using nothing more than a
+    URL. Module 05 shows you what happens when that URL doesn't just trigger
+    an action — it carries a payload that your own server echoes back into
+    a page, unescaped. Every piece of Module 01 through 04 was building the
+    exact mental model you need to see why that's dangerous.
+  </div>
+
+</div>
+
+<div class="wrap">
+  <footer>
+    <a href="../03_forms_and_method_semantics/tutorial.html">&larr; Module 03 — Forms & Method Semantics</a>
+    <a href="../05_reflected_xss_via_get/tutorial.html">Module 05 — Reflected XSS via GET &rarr;</a>
+  </footer>
+</div>
+
+</body>
+</html>
