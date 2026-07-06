@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Module 10 — CSRF via POST | xss_mastery</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;900&family=Source+Code+Pro:wght@400;600&family=Lato:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0b0f1a;      --bg2:#111827;    --bg3:#1a2235;
+    --card:#141c2e;    --border:#1e3a5f; --gold:#f5c842;
+    --cyan:#38bdf8;    --teal:#0d9488;   --red:#f87171;
+    --green:#4ade80;   --purple:#a78bfa; --orange:#fb923c;
+    --text:#e2e8f0;    --muted:#7a9bbf;  --code-bg:#060d1a;
+  }
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: 'Lato', sans-serif; line-height: 1.65; margin: 0; padding: 0 0 80px 0; }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 0 28px; }
+  header.hero { background: linear-gradient(180deg, var(--bg2) 0%, var(--bg) 100%); border-bottom: 1px solid var(--border); padding: 48px 0 32px 0; }
+  h1, h2, h3 { font-family: 'Playfair Display', serif; color: var(--text); letter-spacing: 0.01em; }
+  h1 { font-size: 2.3rem; margin: 0 0 8px 0; color: var(--gold); }
+  .kicker { font-family: 'Source Code Pro', monospace; color: var(--cyan); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.12em; }
+  .subtitle { color: var(--muted); font-size: 1.1rem; margin-top: 6px; }
+  h2 { font-size: 1.6rem; margin-top: 56px; padding-bottom: 10px; border-bottom: 2px solid var(--border); color: var(--cyan); }
+  h2 .num { display: inline-block; font-family: 'Source Code Pro', monospace; color: var(--gold); margin-right: 10px; }
+  h3 { color: var(--gold); font-size: 1.15rem; margin-top: 28px; }
+  p { margin: 14px 0; }
+  code, pre, .mono { font-family: 'Source Code Pro', monospace; }
+  pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px; padding: 18px 20px; overflow-x: auto; font-size: 0.87rem; line-height: 1.6; }
+  pre code { background: none; padding: 0; }
+  code { background: var(--bg3); padding: 2px 6px; border-radius: 4px; font-size: 0.88em; }
+  .cm { color: var(--muted); font-style: italic; } .kw { color: var(--purple); } .str { color: var(--green); } .fn { color: var(--cyan); }
+  .prereq-bar { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 22px 0; }
+  .prereq-tag { display: inline-block; background: var(--bg3); border: 1px solid var(--border); color: var(--cyan); text-decoration: none; padding: 6px 14px; border-radius: 20px; font-family: 'Source Code Pro', monospace; font-size: 0.82rem; }
+  .callout { border-left: 4px solid var(--gold); background: var(--card); padding: 18px 22px; border-radius: 6px; margin: 20px 0; }
+  .callout .label { font-family: 'Source Code Pro', monospace; text-transform: uppercase; font-size: 0.72rem; letter-spacing: 0.1em; color: var(--gold); display: block; margin-bottom: 8px; }
+  .callout.gold { border-left-color: var(--gold); } .callout.gold .label { color: var(--gold); }
+  .callout.teal { border-left-color: var(--teal); } .callout.teal .label { color: var(--teal); }
+  .callout.red { border-left-color: var(--red); } .callout.red .label { color: var(--red); }
+  .callout.green { border-left-color: var(--green); } .callout.green .label { color: var(--green); }
+  .diagram { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 18px 0; }
+  .diagram .cell { background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+  .diagram .cell h4 { margin: 0 0 8px 0; font-family: 'Playfair Display', serif; font-size: 1.05rem; }
+  .diagram .get h4 { color: var(--red); } .diagram .post h4 { color: var(--green); }
+  .diagram .cell p { margin: 4px 0; font-size: 0.93rem; color: var(--muted); }
+  .win-box { background: var(--code-bg); border: 1px solid var(--teal); border-radius: 8px; padding: 4px 22px 18px 22px; margin: 18px 0; }
+  .win-box .title { font-family: 'Source Code Pro', monospace; color: var(--teal); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; padding-top: 14px; }
+  .win-box pre { border: none; background: none; padding: 10px 0; margin: 0; }
+  .brain { background: var(--card); border: 2px dashed var(--purple); border-radius: 8px; padding: 20px 24px; margin: 20px 0; }
+  .brain .label { font-family: 'Source Code Pro', monospace; color: var(--purple); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.1em; }
+  .brain .answer { color: var(--muted); margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+  .qa { margin: 20px 0; } .qa .q { color: var(--gold); font-weight: 700; margin-top: 18px; } .qa .a { color: var(--text); margin-top: 6px; }
+  footer { margin-top: 70px; padding-top: 24px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; font-family: 'Source Code Pro', monospace; font-size: 0.88rem; }
+  footer a { color: var(--cyan); text-decoration: none; } footer .disabled { color: var(--muted); }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="kicker">xss_mastery &middot; Module 10</div>
+    <h1>CSRF via POST</h1>
+    <div class="subtitle">The "obvious fix" from Module 09, tested against a form that submits itself.</div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <h2><span class="num">00</span>Before You Start</h2>
+  <p><strong>Direct prerequisites for this module:</strong></p>
+  <div class="prereq-bar">
+    <a class="prereq-tag" href="../09_csrf_via_get/tutorial.html">Module 09 — CSRF via GET</a>
+  </div>
+  <div class="callout gold">
+    <span class="label">Before You Start</span>
+    You should already be forming the hypothesis "just switch it to POST"
+    after Module 09. Good — that instinct is correct up to a point, and
+    this module is built specifically to show you exactly where that point is.
+  </div>
+
+  <h2><span class="num">01</span>The Big Analogy</h2>
+  <div class="callout gold">
+    <span class="label">Head First Moment</span>
+    <p>Module 09's stranger scanned your loyalty card through a window
+    without you noticing. A reasonable-sounding fix: "require the card to
+    be physically inserted into a reader, not just scanned nearby" — like
+    upgrading from a wave-and-go GET to a deliberate insert-and-confirm
+    POST. That should stop drive-by scanning... except the attacker just
+    builds their OWN card reader, wires it to auto-insert your card the
+    instant you walk near it, and triggers it themselves. The "more
+    deliberate" mechanism didn't require MORE from the attacker — it just
+    required a slightly different tool, one that's just as easy to build.</p>
+    <p>An auto-submitting HTML <code>&lt;form&gt;</code> is that
+    attacker-built card reader. It performs the exact same "deliberate"
+    POST submission a real user would make by clicking a button — except
+    a tiny <code>&lt;script&gt;</code> clicks it for them, invisibly, the
+    instant the page loads.</p>
+  </div>
+
+  <div class="diagram">
+    <div class="cell get">
+      <h4>bank-vulnerable (POST-only "fix")</h4>
+      <p>Requires POST. Checks nothing else. The attacker's auto-submit
+      form defeats it completely: <strong>$1000 &rarr; $750</strong>.</p>
+    </div>
+    <div class="cell post">
+      <h4>bank-fixed (token + SameSite)</h4>
+      <p>Same attacker page, unchanged. Server rejects with 403. Balance
+      stays exactly where it was: <strong>$1000</strong>.</p>
+    </div>
+  </div>
+
+  <h2><span class="num">02</span>The Attack That Still Works</h2>
+  <p>Here's the entirety of the attacker's page against the naive
+  POST-only bank:</p>
+
+  <pre><code>&lt;form id=<span class="str">"csrf-form"</span> method=<span class="str">"post"</span> action=<span class="str">"http://localhost:8000/transfer"</span> style=<span class="str">"display:none"</span>&gt;
+  &lt;input name=<span class="str">"to"</span> value=<span class="str">"attacker"</span>&gt;
+  &lt;input name=<span class="str">"amount"</span> value=<span class="str">"250"</span>&gt;
+&lt;/form&gt;
+&lt;script&gt;
+  document.getElementById(<span class="str">'csrf-form'</span>).submit(); <span class="cm">// fires instantly -- no click, no visible UI</span>
+&lt;/script&gt;</code></pre>
+
+  <p>And the bank's entire remaining vulnerability:</p>
+
+  <pre><code><span class="kw">if</span> (req.method !== <span class="str">'POST'</span>) { <span class="cm">/* reject */</span> }
+<span class="cm">// nothing else checks WHERE this POST came from, or requires anything</span>
+<span class="cm">// the attacker couldn't already know -- session cookie is enough</span>
+balances[session] -= amount;</code></pre>
+
+  <h2><span class="num">03</span>The Real Fix, Two Layers</h2>
+  <p><strong>Layer 1 — a CSRF token the attacker's page cannot know:</strong></p>
+  <pre><code><span class="cm">// issued once per session, embedded as a hidden field in the LEGITIMATE form only</span>
+csrfTokens[session] = crypto.randomBytes(16).toString(<span class="str">'hex'</span>);
+
+<span class="cm">// checked on every transfer -- the attacker's forged form has no way to know this value</span>
+<span class="kw">if</span> (params.csrf_token !== csrfTokens[session]) {
+  <span class="kw">return</span> res.writeHead(403).end(<span class="str">'Forbidden'</span>);
+}</code></pre>
+
+  <p><strong>Layer 2 — a cookie the browser itself refuses to send cross-site:</strong></p>
+  <pre><code>res.setHeader(<span class="str">'Set-Cookie'</span>, <span class="str">'session=victim; Path=/; SameSite=Strict'</span>);
+<span class="cm">// tells the BROWSER: never attach this cookie to a request that</span>
+<span class="cm">// originated from a different site -- enforced before your code even runs</span></code></pre>
+
+  <div class="callout green">
+    <span class="label">Verified</span>
+    This course tested both bank variants against the identical,
+    unmodified attacker page. The naive POST-only version lost $250
+    silently. The token+SameSite version logged
+    <code>REJECTED -- csrf_token mismatch (got undefined)</code> and the
+    balance never moved. Same attack, two different codebases, two
+    different outcomes — the code, not the attacker, is what changed.
+  </div>
+
+  <h2><span class="num">04</span>Run It on Windows 11</h2>
+  <div class="win-box">
+    <div class="title">Test 1 — the naive fix fails</div>
+    <pre><code>Terminal 1: cd xss_mastery\modules\10_csrf_via_post
+            .\run.ps1 -Target run-bank-vulnerable-node
+Terminal 2: .\run.ps1 -Target run-attacker-node
+
+Open http://localhost:8000/ -- note balance: $1000
+Open http://localhost:8001/ in a new tab -- just load it, do nothing
+Reload http://localhost:8000/balance -- balance dropped to $750</code></pre>
+    <div class="title">Test 2 — the real fix holds (stop Terminal 1 first, Ctrl+C)</div>
+    <pre><code>Terminal 1: .\run.ps1 -Target run-bank-fixed-node
+(Terminal 2 -- attacker -- keep it running, or restart it)
+
+Open http://localhost:8000/ -- note balance: $1000
+Open http://localhost:8001/ again -- same unmodified attacker page
+Reload http://localhost:8000/balance -- balance is STILL $1000</code></pre>
+    <div class="title">If you have PHP installed</div>
+    <pre><code>.\run.ps1 -Target run-bank-vulnerable-php   /   run-bank-fixed-php   /   run-attacker-php</code></pre>
+  </div>
+
+  <h2><span class="num">05</span>Brain Exercise</h2>
+  <div class="brain">
+    <span class="label">Brain Exercise</span>
+    <p>A teammate asks: "If SameSite=Strict alone stops the browser from
+    sending the cookie cross-site, why bother with the CSRF token at all?
+    Isn't one defense enough?"</p>
+    <div class="answer">
+      <strong>Because the two defenses fail independently, and "enough"
+      depends on trusting exactly one mechanism to never have a gap.</strong>
+      SameSite is enforced by the BROWSER — it's only as strong as every
+      browser your users might have, correctly implementing the spec,
+      with no bugs, with no legacy fallback behavior for older clients
+      your app still needs to support. A CSRF token is enforced by YOUR
+      SERVER — it works the same way regardless of which browser, or
+      browser version, or non-browser HTTP client, is making the request.
+      History has real examples of both categories failing alone: browser
+      SameSite bugs and inconsistencies (exactly the kind this course
+      found empirically while building this module), and CSRF-token
+      implementations with subtle validation bugs (Decision #4 in this
+      module's DECISIONS.md names a real one — checking "does a token
+      field exist" instead of "does it match"). Depending on exactly one
+      layer means a single flaw in that one layer is a complete bypass.
+      Depending on two independent layers means an attacker needs both to fail
+      at once.
+    </div>
+  </div>
+
+  <h2><span class="num">06</span>There Are No Dumb Questions</h2>
+  <div class="qa">
+    <div class="q">Q: Does a CSRF token need to be secret the way a password is?</div>
+    <div class="a">A: It needs to be unguessable and never exposed to a page the attacker controls — but unlike a password, the LEGITIMATE page is allowed to embed it directly in HTML the user's own browser renders, because the attacker's separate page has no way to read content from a page it doesn't control (this is exactly what the Same-Origin Policy DOES protect, unlike the request-sending question from Module 09's Brain Exercise).</div>
+
+    <div class="q">Q: Do GET requests need CSRF tokens too?</div>
+    <div class="a">A: A well-designed GET request shouldn't need one, because Module 04 already established that GET must never change state — CSRF tokens exist specifically to protect state-changing actions. If you find yourself wanting to add a CSRF token to a GET endpoint, that's usually a sign the real bug is Module 04's, not this module's: the GET endpoint shouldn't be mutating anything in the first place.</div>
+
+    <div class="q">Q: Can an API that uses a header-based auth token (not cookies) be CSRF'd?</div>
+    <div class="a">A: Generally no, and this is worth understanding precisely why: CSRF works because the BROWSER automatically attaches cookies to every request to a given domain, with no action from attacker-controlled JavaScript required. A custom header (like `Authorization: Bearer <token>`) is never attached automatically by the browser — the attacker's page would have to explicitly set that header via JavaScript, which triggers a CORS preflight check that the bank's server would have to explicitly allow. This is exactly why many modern APIs prefer bearer tokens in headers over cookies specifically to sidestep CSRF as a category, at the cost of needing to manage token storage on the client themselves (usually with its own trade-offs around XSS exposure, since a token in JavaScript-accessible storage is readable by exactly the kind of script Module 05-08 taught you to inject).</div>
+  </div>
+
+  <h2><span class="num">07</span>What's Next</h2>
+  <div class="callout teal">
+    <span class="label">What's Next</span>
+    Module 11 — <strong>Output Encoding Defenses</strong> — leaves CSRF
+    behind and returns to fix the actual XSS bugs from Modules 05 and 07,
+    with the real, context-aware encoding technique this course has been
+    deferring since the moment you saw the first vulnerable line of code.
+    Now is the right time because you've built enough intuition for "what
+    a fix actually needs to prove" (Module 10's A/B comparison) to
+    appreciate why encoding, done right, is airtight in a way blocklists
+    and half-measures never are.
+  </div>
+
+</div>
+
+<div class="wrap">
+  <footer>
+    <a href="../09_csrf_via_get/tutorial.html">&larr; Module 09 — CSRF via GET</a>
+    <a href="../11_output_encoding_defenses/tutorial.html">Module 11 — Output Encoding Defenses &rarr;</a>
+  </footer>
+</div>
+
+</body>
+</html>
