@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Module 02 — Superglobals & req Objects | xss_mastery</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;900&family=Source+Code+Pro:wght@400;600&family=Lato:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0b0f1a;      --bg2:#111827;    --bg3:#1a2235;
+    --card:#141c2e;    --border:#1e3a5f; --gold:#f5c842;
+    --cyan:#38bdf8;    --teal:#0d9488;   --red:#f87171;
+    --green:#4ade80;   --purple:#a78bfa; --orange:#fb923c;
+    --text:#e2e8f0;    --muted:#7a9bbf;  --code-bg:#060d1a;
+  }
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: 'Lato', sans-serif; line-height: 1.65; margin: 0; padding: 0 0 80px 0; }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 0 28px; }
+  header.hero { background: linear-gradient(180deg, var(--bg2) 0%, var(--bg) 100%); border-bottom: 1px solid var(--border); padding: 48px 0 32px 0; }
+  h1, h2, h3 { font-family: 'Playfair Display', serif; color: var(--text); letter-spacing: 0.01em; }
+  h1 { font-size: 2.3rem; margin: 0 0 8px 0; color: var(--gold); }
+  .kicker { font-family: 'Source Code Pro', monospace; color: var(--cyan); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.12em; }
+  .subtitle { color: var(--muted); font-size: 1.1rem; margin-top: 6px; }
+  h2 { font-size: 1.6rem; margin-top: 56px; padding-bottom: 10px; border-bottom: 2px solid var(--border); color: var(--cyan); }
+  h2 .num { display: inline-block; font-family: 'Source Code Pro', monospace; color: var(--gold); margin-right: 10px; }
+  h3 { color: var(--gold); font-size: 1.15rem; margin-top: 28px; }
+  p { margin: 14px 0; }
+  code, pre, .mono { font-family: 'Source Code Pro', monospace; }
+  pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px; padding: 18px 20px; overflow-x: auto; font-size: 0.87rem; line-height: 1.6; }
+  pre code { background: none; padding: 0; }
+  code { background: var(--bg3); padding: 2px 6px; border-radius: 4px; font-size: 0.88em; }
+  .cm { color: var(--muted); font-style: italic; } .kw { color: var(--purple); } .str { color: var(--green); } .fn { color: var(--cyan); }
+  .prereq-bar { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 22px 0; }
+  .prereq-tag { display: inline-block; background: var(--bg3); border: 1px solid var(--border); color: var(--cyan); text-decoration: none; padding: 6px 14px; border-radius: 20px; font-family: 'Source Code Pro', monospace; font-size: 0.82rem; }
+  .callout { border-left: 4px solid var(--gold); background: var(--card); padding: 18px 22px; border-radius: 6px; margin: 20px 0; }
+  .callout .label { font-family: 'Source Code Pro', monospace; text-transform: uppercase; font-size: 0.72rem; letter-spacing: 0.1em; color: var(--gold); display: block; margin-bottom: 8px; }
+  .callout.gold { border-left-color: var(--gold); } .callout.gold .label { color: var(--gold); }
+  .callout.teal { border-left-color: var(--teal); } .callout.teal .label { color: var(--teal); }
+  .diagram { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 18px 0; }
+  .diagram .cell { background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+  .diagram .cell h4 { margin: 0 0 8px 0; font-family: 'Playfair Display', serif; font-size: 1.05rem; }
+  .diagram .get h4 { color: var(--cyan); } .diagram .post h4 { color: var(--orange); }
+  .diagram .cell p { margin: 4px 0; font-size: 0.93rem; color: var(--muted); }
+  .diagram .cell .tag { font-family: 'Source Code Pro', monospace; font-size: 0.78rem; color: var(--text); background: var(--bg2); padding: 2px 8px; border-radius: 4px; }
+  .win-box { background: var(--code-bg); border: 1px solid var(--teal); border-radius: 8px; padding: 4px 22px 18px 22px; margin: 18px 0; }
+  .win-box .title { font-family: 'Source Code Pro', monospace; color: var(--teal); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; padding-top: 14px; }
+  .win-box pre { border: none; background: none; padding: 10px 0; margin: 0; }
+  .brain { background: var(--card); border: 2px dashed var(--purple); border-radius: 8px; padding: 20px 24px; margin: 20px 0; }
+  .brain .label { font-family: 'Source Code Pro', monospace; color: var(--purple); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.1em; }
+  .brain .answer { color: var(--muted); margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+  .qa { margin: 20px 0; } .qa .q { color: var(--gold); font-weight: 700; margin-top: 18px; } .qa .a { color: var(--text); margin-top: 6px; }
+  footer { margin-top: 70px; padding-top: 24px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; font-family: 'Source Code Pro', monospace; font-size: 0.88rem; }
+  footer a { color: var(--cyan); text-decoration: none; } footer .disabled { color: var(--muted); }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="kicker">xss_mastery &middot; Module 02</div>
+    <h1>Superglobals & req Objects</h1>
+    <div class="subtitle">The raw bytes from Module 01, now organized into something a program can actually use.</div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <h2><span class="num">00</span>Before You Start</h2>
+  <p><strong>Direct prerequisites for this module:</strong></p>
+  <div class="prereq-bar">
+    <a class="prereq-tag" href="../01_http_request_anatomy/tutorial.html">Module 01 — HTTP Request Anatomy</a>
+  </div>
+  <div class="callout gold">
+    <span class="label">Before You Start</span>
+    You need to be comfortable reading a raw HTTP request the way Module 01
+    printed it — recognizing the method line, the headers, the blank line,
+    and (for POST) the body underneath it. If you can look at a block of
+    raw request text and point to "this is where the query string is" and
+    "this is where the body starts," you're ready. If that still takes you
+    a moment, re-run Module 01's demo once more before continuing.
+  </div>
+
+  <h2><span class="num">01</span>The Big Analogy</h2>
+  <div class="callout gold">
+    <span class="label">Head First Moment</span>
+    <p>The doorbell camera from Module 01 doesn't understand anything — it
+    just records. Module 02 introduces the <strong>host stand</strong>. The
+    host watches the same door, hears the same words, reads the same
+    tickets — but the host's whole job is <em>organizing</em> that raw
+    material into something the kitchen and waitstaff can actually act on:
+    "table for two, no reservation" becomes a clear note, and a sealed
+    order ticket gets unfolded into "one lasagna, no onions, table 4."</p>
+    <p>That's exactly what <code>$_GET</code>/<code>$_POST</code> in PHP and
+    <code>req.query</code>/<code>req.body</code> in Node do. They are the
+    host stand for your code — the layer that takes Module 01's raw,
+    undifferentiated bytes and organizes them into labeled key/value pairs
+    you can actually work with by name, like <code>$_GET['q']</code>
+    instead of hunting through a wall of text yourself.</p>
+  </div>
+
+  <div class="diagram">
+    <div class="cell get">
+      <h4>GET — words at the door</h4>
+      <p>The host hears "table for two, dessert menu please" shouted at the
+      entrance and writes it down as organized facts.</p>
+      <p class="tag">$_GET['course'] === 'dessert'</p>
+    </div>
+    <div class="cell post">
+      <h4>POST — the sealed ticket</h4>
+      <p>The host unfolds the ticket handed in by the runner and reads its
+      contents into the same kind of organized note.</p>
+      <p class="tag">$_POST['dish'] === 'lasagna'</p>
+    </div>
+  </div>
+
+  <h2><span class="num">02</span>What "Superglobal" Actually Means</h2>
+  <p>A <strong>superglobal</strong> (PHP's term for a built-in array that's
+  automatically available inside every function, with no need to import or
+  declare it) isn't magic — it's PHP's SAPI (the layer that connects PHP to
+  a web server) doing the exact byte-splitting job you'd otherwise have to
+  do by hand, and handing you the result before your script's first line
+  even runs. Node makes the same job explicit rather than automatic: the
+  <code>http</code> module hands you a raw <code>req</code> object, and
+  <em>you</em> (or a library) still have to parse <code>req.url</code>'s
+  query string and read <code>req</code>'s body stream yourself — which is
+  precisely why Module 02 has you write that parser by hand once, so you
+  know exactly what PHP is doing for you invisibly.</p>
+
+  <div class="callout teal">
+    <span class="label">Why this matters</span>
+    Once you've hand-written <code>parseFormEncoded()</code> yourself, a
+    superglobal stops looking like magic and starts looking like exactly
+    what it is: a `split` on <code>&amp;</code>, a `split` on
+    <code>=</code>, and a percent-decode. Every time you later wonder "wait,
+    <em>how</em> did this value get into <code>$_GET</code>," you now have
+    a real mental model to check it against, instead of a black box.
+  </div>
+
+  <h2><span class="num">03</span>Parsing a Query String by Hand</h2>
+  <p>Here's the core of <code>parseFormEncoded()</code> from
+  <code>node/server.js</code> — the same logic PHP's SAPI runs for you
+  before you ever see <code>$_GET</code>:</p>
+
+  <pre><code><span class="kw">function</span> <span class="fn">parseFormEncoded</span>(text) {
+  <span class="kw">const</span> result = {};
+  <span class="kw">if</span> (text === <span class="str">''</span>) <span class="kw">return</span> result; <span class="cm">// nothing to parse -- avoid a bogus {'': ''} entry</span>
+
+  <span class="kw">for</span> (<span class="kw">const</span> pair <span class="kw">of</span> text.split(<span class="str">'&'</span>)) {
+    <span class="kw">const</span> eqIndex = pair.indexOf(<span class="str">'='</span>);
+    <span class="kw">const</span> rawKey = eqIndex === -1 ? pair : pair.slice(0, eqIndex);
+    <span class="kw">const</span> rawValue = eqIndex === -1 ? <span class="str">''</span> : pair.slice(eqIndex + 1);
+
+    <span class="cm">// '+' means literal space in this encoding -- must happen before percent-decoding</span>
+    <span class="kw">const</span> key = decodeURIComponent(rawKey.replace(<span class="str">/\+/g</span>, <span class="str">' '</span>));
+    <span class="kw">const</span> value = decodeURIComponent(rawValue.replace(<span class="str">/\+/g</span>, <span class="str">' '</span>));
+
+    result[key] = value; <span class="cm">// later keys overwrite earlier ones -- see DECISIONS.md #3</span>
+  }
+  <span class="kw">return</span> result;
+}</code></pre>
+
+  <p>And the PHP side of the same story — notice there's no parsing code
+  at all, because it already happened before this script started:</p>
+
+  <pre><code>$dump = [
+    <span class="str">'method'</span> => $_SERVER[<span class="str">'REQUEST_METHOD'</span>], <span class="cm">// superglobal -- no parsing code visible here</span>
+    <span class="str">'GET'</span>    => $_GET,                     <span class="cm">// already parsed by the SAPI before this line runs</span>
+    <span class="str">'POST'</span>   => $_POST,                    <span class="cm">// same -- but only for form-encoded/multipart bodies (see DECISIONS.md #4)</span>
+];</code></pre>
+
+  <div class="callout gold">
+    <span class="label">Why this matters</span>
+    The PHP snippet is short because the work is invisible, not because
+    there's less work happening. That invisibility is exactly why PHP
+    beginners get surprised the first time they POST JSON and find
+    <code>$_POST</code> empty (DECISIONS.md #4) — the parsing didn't fail,
+    it simply never runs for content types PHP doesn't recognize as a form.
+  </div>
+
+  <h2><span class="num">04</span>Run It on Windows 11</h2>
+  <div class="win-box">
+    <div class="title">Terminal 1</div>
+    <pre><code>cd xss_mastery\modules\02_superglobals_and_req_objects
+.\run.ps1 -Target run-node</code></pre>
+    <div class="title">Terminal 2</div>
+    <pre><code>curl "http://localhost:8000/search?q=hello&sort=asc"</code></pre>
+    <div class="title">Expected response</div>
+    <pre><code>{
+  "method": "GET",
+  "path": "/search",
+  "GET": { "q": "hello", "sort": "asc" },
+  "POST": {}
+}</code></pre>
+    <div class="title">Now a POST</div>
+    <pre><code>curl -X POST http://localhost:8000/submit -d "name=bob&role=chef"</code></pre>
+    <pre><code>{
+  "method": "POST",
+  "path": "/submit",
+  "GET": {},
+  "POST": { "name": "bob", "role": "chef" }
+}</code></pre>
+    <div class="title">If you have PHP installed</div>
+    <pre><code>.\run.ps1 -Target run-php</code></pre>
+    <p style="color:var(--muted); font-size:0.88rem;">Same two curl commands against port 8000 produce the same shape of JSON — stop the Node server first, they share the port.</p>
+  </div>
+
+  <h2><span class="num">05</span>Brain Exercise</h2>
+  <div class="brain">
+    <span class="label">Brain Exercise</span>
+    <p>Run this against the Node server:</p>
+    <pre><code>curl "http://localhost:8000/search?q=hello&q=world"</code></pre>
+    <p>What do you expect <code>GET.q</code> to be in the response — an
+    array of both values, or just one of them?</p>
+    <div class="answer">
+      <strong>It'll be <code>"world"</code> — just the last one, silently
+      overwriting the first.</strong> Look back at <code>parseFormEncoded()</code>:
+      the line <code>result[key] = value</code> has no check for whether
+      <code>key</code> already exists. This isn't a bug you're meant to
+      panic about — DECISIONS.md #3 names it as a deliberate simplification
+      — but it IS a real trap if you ever build a form with a multi-select
+      field and wonder why only one selection survived. PHP's actual
+      `$_GET`/`$_POST` have the exact same overwrite behavior for a plain
+      repeated key like <code>?q=hello&q=world</code> — PHP only collects
+      multiple values when you use the explicit `?q[]=hello&q[]=world`
+      bracket syntax. The trap here is realistic, not invented.
+    </div>
+  </div>
+
+  <h2><span class="num">06</span>There Are No Dumb Questions</h2>
+  <div class="qa">
+    <div class="q">Q: If $_GET and $_POST are "superglobals," are they global variables I could accidentally overwrite?</div>
+    <div class="a">A: Yes, technically — very old PHP code sometimes did exactly that by accident, which is part of why a long-removed setting called `register_globals` (which auto-created a regular variable for every request field) was considered dangerous enough to be removed from the language entirely. Treat superglobals as read-only input, never as scratch variables.</div>
+
+    <div class="q">Q: My Node server needed 40 lines to do what PHP does in zero lines. Doesn't that mean PHP is just better here?</div>
+    <div class="a">A: It means PHP made a framework-level decision to auto-parse forms for you, and Node's core `http` module deliberately doesn't — Node expects you to reach for a parsing library (or, in this course, write one) when you need it. Neither choice is "better"; they're different defaults. You'll see the cost of PHP's invisible convenience in Module 04, when a value you didn't expect to be there shows up anyway.</div>
+
+    <div class="q">Q: Why does the tutorial keep warning me not to merge GET and POST together? What's actually at risk?</div>
+    <div class="a">A: Nothing breaks today. But starting in Module 09 (CSRF), you'll see attacks that specifically exploit the fact that a GET request can be triggered by any page on the internet (via an image tag, a link, a redirect) while a POST at least requires a deliberate form submission. Code that reads from a merged $_REQUEST-style bag can no longer tell which channel a value arrived through — and that distinction is exactly what a CSRF defense needs to check.</div>
+
+    <div class="q">Q: Is percent-decoding a security thing I should worry about?</div>
+    <div class="a">A: Keep this question in your back pocket — you're right to notice it, but it's not this module's concept. Percent-decoding done at the wrong layer, or done twice, is a real source of filter-bypass bugs (a payload that looks safe once-decoded can decode again into something dangerous). You'll see this become concrete once you're building defenses in Module 11.</div>
+  </div>
+
+  <h2><span class="num">07</span>What's Next</h2>
+  <div class="callout teal">
+    <span class="label">What's Next</span>
+    Module 03 — <strong>Forms & Method Semantics</strong> — takes the
+    parsed <code>GET</code>/<code>POST</code> objects you can now produce
+    and connects them to real HTML <code>&lt;form&gt;</code> elements, so
+    you can watch, in your own browser's URL bar and history, exactly what
+    changes when you flip <code>method="get"</code> to
+    <code>method="post"</code>. Now is the right time because you already
+    know precisely what lands in <code>$_GET</code> vs. <code>$_POST</code>
+    on the server side — Module 03 is purely about what the browser does
+    to get it there.
+  </div>
+
+</div>
+
+<div class="wrap">
+  <footer>
+    <a href="../01_http_request_anatomy/tutorial.html">&larr; Module 01 — HTTP Request Anatomy</a>
+    <a href="../03_forms_and_method_semantics/tutorial.html">Module 03 — Forms &amp; Method Semantics &rarr;</a>
+  </footer>
+</div>
+
+</body>
+</html>
