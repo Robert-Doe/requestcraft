@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Module 11 — Output Encoding Defenses | xss_mastery</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;900&family=Source+Code+Pro:wght@400;600&family=Lato:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0b0f1a;      --bg2:#111827;    --bg3:#1a2235;
+    --card:#141c2e;    --border:#1e3a5f; --gold:#f5c842;
+    --cyan:#38bdf8;    --teal:#0d9488;   --red:#f87171;
+    --green:#4ade80;   --purple:#a78bfa; --orange:#fb923c;
+    --text:#e2e8f0;    --muted:#7a9bbf;  --code-bg:#060d1a;
+  }
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: 'Lato', sans-serif; line-height: 1.65; margin: 0; padding: 0 0 80px 0; }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 0 28px; }
+  header.hero { background: linear-gradient(180deg, var(--bg2) 0%, var(--bg) 100%); border-bottom: 1px solid var(--border); padding: 48px 0 32px 0; }
+  h1, h2, h3 { font-family: 'Playfair Display', serif; color: var(--text); letter-spacing: 0.01em; }
+  h1 { font-size: 2.3rem; margin: 0 0 8px 0; color: var(--gold); }
+  .kicker { font-family: 'Source Code Pro', monospace; color: var(--cyan); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.12em; }
+  .subtitle { color: var(--muted); font-size: 1.1rem; margin-top: 6px; }
+  h2 { font-size: 1.6rem; margin-top: 56px; padding-bottom: 10px; border-bottom: 2px solid var(--border); color: var(--cyan); }
+  h2 .num { display: inline-block; font-family: 'Source Code Pro', monospace; color: var(--gold); margin-right: 10px; }
+  h3 { color: var(--gold); font-size: 1.15rem; margin-top: 28px; }
+  p { margin: 14px 0; }
+  code, pre, .mono { font-family: 'Source Code Pro', monospace; }
+  pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px; padding: 18px 20px; overflow-x: auto; font-size: 0.87rem; line-height: 1.6; }
+  pre code { background: none; padding: 0; }
+  code { background: var(--bg3); padding: 2px 6px; border-radius: 4px; font-size: 0.88em; }
+  .cm { color: var(--muted); font-style: italic; } .kw { color: var(--purple); } .str { color: var(--green); } .fn { color: var(--cyan); }
+  .prereq-bar { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 22px 0; }
+  .prereq-tag { display: inline-block; background: var(--bg3); border: 1px solid var(--border); color: var(--cyan); text-decoration: none; padding: 6px 14px; border-radius: 20px; font-family: 'Source Code Pro', monospace; font-size: 0.82rem; }
+  .callout { border-left: 4px solid var(--gold); background: var(--card); padding: 18px 22px; border-radius: 6px; margin: 20px 0; }
+  .callout .label { font-family: 'Source Code Pro', monospace; text-transform: uppercase; font-size: 0.72rem; letter-spacing: 0.1em; color: var(--gold); display: block; margin-bottom: 8px; }
+  .callout.gold { border-left-color: var(--gold); } .callout.gold .label { color: var(--gold); }
+  .callout.teal { border-left-color: var(--teal); } .callout.teal .label { color: var(--teal); }
+  .callout.red { border-left-color: var(--red); } .callout.red .label { color: var(--red); }
+  .callout.green { border-left-color: var(--green); } .callout.green .label { color: var(--green); }
+  .diagram { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin: 18px 0; }
+  .diagram .cell { background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 14px; }
+  .diagram .cell h4 { margin: 0 0 8px 0; font-family: 'Playfair Display', serif; font-size: 0.98rem; }
+  .diagram .bad h4 { color: var(--red); } .diagram .trap h4 { color: var(--orange); } .diagram .good h4 { color: var(--green); }
+  .diagram .cell p { margin: 4px 0; font-size: 0.87rem; color: var(--muted); }
+  .win-box { background: var(--code-bg); border: 1px solid var(--teal); border-radius: 8px; padding: 4px 22px 18px 22px; margin: 18px 0; }
+  .win-box .title { font-family: 'Source Code Pro', monospace; color: var(--teal); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; padding-top: 14px; }
+  .win-box pre { border: none; background: none; padding: 10px 0; margin: 0; }
+  .brain { background: var(--card); border: 2px dashed var(--purple); border-radius: 8px; padding: 20px 24px; margin: 20px 0; }
+  .brain .label { font-family: 'Source Code Pro', monospace; color: var(--purple); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.1em; }
+  .brain .answer { color: var(--muted); margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+  .qa { margin: 20px 0; } .qa .q { color: var(--gold); font-weight: 700; margin-top: 18px; } .qa .a { color: var(--text); margin-top: 6px; }
+  footer { margin-top: 70px; padding-top: 24px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; font-family: 'Source Code Pro', monospace; font-size: 0.88rem; }
+  footer a { color: var(--cyan); text-decoration: none; } footer .disabled { color: var(--muted); }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="kicker">xss_mastery &middot; Module 11</div>
+    <h1>Output Encoding Defenses</h1>
+    <div class="subtitle">The fix this course has owed you since Module 05 — and the trap waiting right behind it.</div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <h2><span class="num">00</span>Before You Start</h2>
+  <p><strong>Direct prerequisites for this module:</strong></p>
+  <div class="prereq-bar">
+    <a class="prereq-tag" href="../07_stored_xss_via_post/tutorial.html">Module 07 — Stored XSS via POST</a>
+    <a class="prereq-tag" href="../06_sources_and_sinks/tutorial.html">Module 06 — Sources & Sinks</a>
+  </div>
+  <div class="callout gold">
+    <span class="label">Before You Start</span>
+    You need Modules 05 and 07's exact vulnerable code fresh in mind — this
+    module patches those exact files, line for line, and expects you to
+    notice how small the diff actually is.
+  </div>
+
+  <h2><span class="num">01</span>The Big Analogy</h2>
+  <div class="callout gold">
+    <span class="label">Head First Moment</span>
+    <p>Remember the waiter who read a customer's fake "kitchen
+    announcement" aloud, word for word, because nothing distinguished it
+    from a real order? Encoding is the front counter's rewrite step:
+    before anything a customer wrote gets read aloud or pinned to the
+    specials board, the counter transcribes it into a form that can
+    ONLY ever be read as "words a customer said," never as "an
+    instruction to follow" — even if the customer wrote something that
+    LOOKS exactly like an instruction. <code>&lt;script&gt;</code> becomes
+    the literal, harmless text <code>&amp;lt;script&amp;gt;</code> — still
+    fully readable by a human, but structurally incapable of being
+    mistaken for a real tag by anyone (or anything) reading it afterward.</p>
+  </div>
+
+  <h2><span class="num">02</span>The Entire Fix, By Diff</h2>
+  <p>Here is genuinely the whole change to Module 05's vulnerable line:</p>
+  <pre><code><span class="cm">// Module 05 (vulnerable):</span>
+&lt;p&gt;You searched for: <span class="cm">${q}</span>&lt;/p&gt;
+
+<span class="cm">// Module 11 (fixed) -- one function call added, nothing else changed:</span>
+&lt;p&gt;You searched for: <span class="cm">${encodeHtml(q)}</span>&lt;/p&gt;</code></pre>
+
+  <p>And the encoder itself, small enough to read in full:</p>
+  <pre><code><span class="kw">function</span> <span class="fn">encodeHtml</span>(str) {
+  <span class="kw">return</span> String(str)
+    .replace(<span class="str">/&/g</span>, <span class="str">'&amp;amp;'</span>)  <span class="cm">// MUST run first -- else this step re-escapes entities the next lines just created</span>
+    .replace(<span class="str">/</span><span class="str">&lt;/g</span>, <span class="str">'&amp;lt;'</span>)
+    .replace(<span class="str">/&gt;/g</span>, <span class="str">'&amp;gt;'</span>)
+    .replace(<span class="str">/"/g</span>, <span class="str">'&amp;quot;'</span>)
+    .replace(<span class="str">/'/g</span>, <span class="str">'&amp;#39;'</span>);
+}</code></pre>
+
+  <div class="callout green">
+    <span class="label">Verified</span>
+    This course ran the EXACT payload URL from Module 05 against the
+    fixed server. The response now literally contains the text
+    <code>&amp;lt;script&amp;gt;document.title=&amp;#39;XSS-PROOF&amp;#39;&amp;lt;/script&amp;gt;</code>
+    — visible, harmless characters, not an executing tag. Same test
+    against the fixed guestbook (Module 07's payload): identical result.
+  </div>
+
+  <h2><span class="num">03</span>The Trap: Encoding Isn't Enough Everywhere</h2>
+  <p>This module includes a THIRD demo, deliberately, because "I called an
+  encoding function" is not the same claim as "I am safe." Three routes,
+  same payload (<code>red onmouseover=alert(1)</code> — notice: no
+  <code>&lt;</code>, no <code>&gt;</code>, no quotes at all):</p>
+
+  <div class="diagram">
+    <div class="cell bad">
+      <h4>unquoted-unencoded</h4>
+      <p><code>style=${color}</code></p>
+      <p>Obviously broken — no encoding, no quotes.</p>
+    </div>
+    <div class="cell trap">
+      <h4>unquoted-encoded</h4>
+      <p><code>style=${encodeHtml(color)}</code></p>
+      <p><strong>Still broken.</strong> encodeHtml() never touches spaces.</p>
+    </div>
+    <div class="cell good">
+      <h4>quoted-encoded</h4>
+      <p><code>style="${encodeHtml(color)}"</code></p>
+      <p>Actually safe. The quote is what neutralizes the space.</p>
+    </div>
+  </div>
+
+  <div class="callout green">
+    <span class="label">Verified</span>
+    Loading the "unquoted-encoded" route and running
+    <code>document.getElementById('target').getAttribute('onmouseover')</code>
+    in the browser returns the string <code>"alert(1)"</code> — a REAL,
+    separate HTML attribute the browser created, despite encoding having
+    run. The identical check on "quoted-encoded" returns <code>null</code>
+    — <code>onmouseover</code> was never created as its own attribute at
+    all; the whole string just sat inertly inside <code>style</code>.
+  </div>
+
+  <div class="callout red">
+    <span class="label">Why this matters</span>
+    <code>encodeHtml()</code> only ever needed to handle
+    <code>&amp; &lt; &gt; " '</code> because those are the characters that
+    give HTML BODY text its structure. An HTML ATTRIBUTE has an
+    additional structural character depending on how it's delimited: an
+    UNQUOTED attribute treats whitespace as a delimiter too. The fix isn't
+    a smarter encoder — it's using the right encoder for the right
+    context, AND always quoting your attributes. Never emit an unquoted
+    HTML attribute, ever, regardless of what's in it.
+  </div>
+
+  <h2><span class="num">04</span>Run It on Windows 11</h2>
+  <div class="win-box">
+    <div class="title">Confirm the Module 05 fix</div>
+    <pre><code>cd xss_mastery\modules\11_output_encoding_defenses
+.\run.ps1 -Target run-reflected-fixed-node</code></pre>
+    <pre><code>Open the same payload URL from Module 05:
+http://localhost:8000/search?q=%3Cscript%3Ealert(document.cookie)%3C%2Fscript%3E
+No alert box. View source: you'll see &lt;script&gt; as literal text.</code></pre>
+    <div class="title">Confirm the Module 07 fix</div>
+    <pre><code>.\run.ps1 -Target run-stored-fixed-node</code></pre>
+    <pre><code>curl -X POST http://localhost:8000/comment --data-urlencode "name=attacker" --data-urlencode "message=&lt;script&gt;alert(1)&lt;/script&gt;"
+Reload http://localhost:8000/ -- the comment shows the literal tag text, doesn't execute.</code></pre>
+    <div class="title">The attribute-quoting trap</div>
+    <pre><code>.\run.ps1 -Target run-context-demo-node</code></pre>
+    <pre><code>Open http://localhost:8000/unquoted-encoded?color=red%20onmouseover=alert(1)
+Open DevTools console, run:
+  document.getElementById('target').getAttribute('onmouseover')
+Returns "alert(1)" -- a real attribute, despite encoding.
+
+Now try /quoted-encoded with the same payload -- same check returns null.</code></pre>
+    <div class="title">If you have PHP installed</div>
+    <pre><code>.\run.ps1 -Target run-reflected-fixed-php   /   run-stored-fixed-php   /   run-context-demo-php</code></pre>
+  </div>
+
+  <h2><span class="num">05</span>Brain Exercise</h2>
+  <div class="brain">
+    <span class="label">Brain Exercise</span>
+    <p>A teammate wants a single "universal" encoding function they can
+    call ANYWHERE in the codebase — HTML body, attributes, JS strings,
+    URLs — without having to think about which context they're in each
+    time. Is this a good idea?</p>
+    <div class="answer">
+      <strong>It sounds convenient but it's exactly backwards, and this
+      module's context-demo just proved why.</strong> An encoder that's
+      aggressive enough to be safe in every context (say, one that also
+      encodes spaces, to close the attribute-quoting gap) would corrupt
+      perfectly normal text in HTML body context — try displaying a
+      comment that says "hello there" if your encoder mangles spaces. A
+      value's correct encoding depends entirely on WHERE it's being
+      written: body text needs `&<>"'` encoded; a quoted attribute needs
+      the same set; a JavaScript string literal needs backslash and quote
+      escaping instead (encoding `<` does nothing useful inside a
+      `<script>` block); a URL needs percent-encoding, which looks
+      nothing like HTML entity encoding at all. "One function for every
+      context" either under-protects some contexts or over-mangles
+      others. The correct engineering answer is a small family of
+      context-specific encoders, chosen deliberately at each sink — which
+      is exactly the vocabulary Module 06 gave you the words for.
+    </div>
+  </div>
+
+  <h2><span class="num">06</span>There Are No Dumb Questions</h2>
+  <div class="qa">
+    <div class="q">Q: If I use a modern framework (React, Vue, Blade, Twig), do I still need to know this?</div>
+    <div class="a">A: You need to know it MORE, not less — because the framework auto-encodes for you in the common case (rendering a variable into body text), which means the only time you'll personally need this knowledge is the rare case where you reach for the framework's explicit escape hatch (`dangerouslySetInnerHTML` in React, `{!! !!}` in Blade, `v-html` in Vue) — and at that exact moment, the framework's safety net is gone and you are 100% back to manual responsibility, with no compiler warning telling you so.</div>
+
+    <div class="q">Q: Why not just strip out dangerous characters instead of encoding them?</div>
+    <div class="a">A: Stripping destroys legitimate content (a message that legitimately contains "5 < 10" would lose the "<") and, worse, is exactly the kind of blocklist approach Module 07's Brain Exercise already showed failing against `<img onerror=...>` and `<svg onload=...>` variants. Encoding preserves the original meaning as visible text while making it structurally inert — it doesn't guess at what's "dangerous," it neutralizes the characters that give ANY markup its power, regardless of which tag or attribute they'd otherwise form.</div>
+
+    <div class="q">Q: Does encoding on output mean I don't need to validate input at all?</div>
+    <div class="a">A: Correct for XSS specifically — output encoding at the sink is what actually stops XSS, and it works regardless of what the input looked like. But input validation still matters for OTHER reasons (rejecting a 50,000-character name field, enforcing that an email field looks like an email) — Module 14 covers input validation as a defense-in-depth layer, explicitly not as a replacement for what you just learned here.</div>
+  </div>
+
+  <h2><span class="num">07</span>What's Next</h2>
+  <div class="callout teal">
+    <span class="label">What's Next</span>
+    Module 12 — <strong>Content Security Policy</strong> — adds a second,
+    completely independent layer of defense: a browser-enforced policy
+    that can stop injected scripts from running even if an encoding call
+    somewhere gets missed. Now is the right time because you've just seen,
+    concretely, how much this fix depends on a developer remembering to
+    call the right function at the right sink, every single time — CSP is
+    the safety net for the time someone forgets.
+  </div>
+
+</div>
+
+<div class="wrap">
+  <footer>
+    <a href="../10_csrf_via_post/tutorial.html">&larr; Module 10 — CSRF via POST</a>
+    <a href="../12_content_security_policy/tutorial.html">Module 12 — Content Security Policy &rarr;</a>
+  </footer>
+</div>
+
+</body>
+</html>
