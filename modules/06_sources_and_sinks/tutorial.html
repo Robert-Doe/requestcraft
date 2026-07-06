@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Module 06 — Sources & Sinks | xss_mastery</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;900&family=Source+Code+Pro:wght@400;600&family=Lato:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0b0f1a;      --bg2:#111827;    --bg3:#1a2235;
+    --card:#141c2e;    --border:#1e3a5f; --gold:#f5c842;
+    --cyan:#38bdf8;    --teal:#0d9488;   --red:#f87171;
+    --green:#4ade80;   --purple:#a78bfa; --orange:#fb923c;
+    --text:#e2e8f0;    --muted:#7a9bbf;  --code-bg:#060d1a;
+  }
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: 'Lato', sans-serif; line-height: 1.65; margin: 0; padding: 0 0 80px 0; }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 0 28px; }
+  header.hero { background: linear-gradient(180deg, var(--bg2) 0%, var(--bg) 100%); border-bottom: 1px solid var(--border); padding: 48px 0 32px 0; }
+  h1, h2, h3 { font-family: 'Playfair Display', serif; color: var(--text); letter-spacing: 0.01em; }
+  h1 { font-size: 2.3rem; margin: 0 0 8px 0; color: var(--gold); }
+  .kicker { font-family: 'Source Code Pro', monospace; color: var(--cyan); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.12em; }
+  .subtitle { color: var(--muted); font-size: 1.1rem; margin-top: 6px; }
+  h2 { font-size: 1.6rem; margin-top: 56px; padding-bottom: 10px; border-bottom: 2px solid var(--border); color: var(--cyan); }
+  h2 .num { display: inline-block; font-family: 'Source Code Pro', monospace; color: var(--gold); margin-right: 10px; }
+  h3 { color: var(--gold); font-size: 1.15rem; margin-top: 28px; }
+  p { margin: 14px 0; }
+  code, pre, .mono { font-family: 'Source Code Pro', monospace; }
+  pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px; padding: 18px 20px; overflow-x: auto; font-size: 0.87rem; line-height: 1.6; }
+  pre code { background: none; padding: 0; }
+  code { background: var(--bg3); padding: 2px 6px; border-radius: 4px; font-size: 0.88em; }
+  .cm { color: var(--muted); font-style: italic; } .kw { color: var(--purple); } .str { color: var(--green); } .fn { color: var(--cyan); }
+  .prereq-bar { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 22px 0; }
+  .prereq-tag { display: inline-block; background: var(--bg3); border: 1px solid var(--border); color: var(--cyan); text-decoration: none; padding: 6px 14px; border-radius: 20px; font-family: 'Source Code Pro', monospace; font-size: 0.82rem; }
+  .callout { border-left: 4px solid var(--gold); background: var(--card); padding: 18px 22px; border-radius: 6px; margin: 20px 0; }
+  .callout .label { font-family: 'Source Code Pro', monospace; text-transform: uppercase; font-size: 0.72rem; letter-spacing: 0.1em; color: var(--gold); display: block; margin-bottom: 8px; }
+  .callout.gold { border-left-color: var(--gold); } .callout.gold .label { color: var(--gold); }
+  .callout.teal { border-left-color: var(--teal); } .callout.teal .label { color: var(--teal); }
+  .callout.red { border-left-color: var(--red); } .callout.red .label { color: var(--red); }
+  table.sst { width: 100%; border-collapse: collapse; margin: 18px 0; font-size: 0.92rem; }
+  table.sst th { text-align: left; color: var(--gold); font-family: 'Source Code Pro', monospace; font-size: 0.78rem; text-transform: uppercase; border-bottom: 2px solid var(--border); padding: 8px 10px; }
+  table.sst td { padding: 8px 10px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: top; }
+  table.sst tr:last-child td { border-bottom: none; }
+  .win-box { background: var(--code-bg); border: 1px solid var(--teal); border-radius: 8px; padding: 4px 22px 18px 22px; margin: 18px 0; }
+  .win-box .title { font-family: 'Source Code Pro', monospace; color: var(--teal); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; padding-top: 14px; }
+  .win-box pre { border: none; background: none; padding: 10px 0; margin: 0; }
+  .brain { background: var(--card); border: 2px dashed var(--purple); border-radius: 8px; padding: 20px 24px; margin: 20px 0; }
+  .brain .label { font-family: 'Source Code Pro', monospace; color: var(--purple); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.1em; }
+  .brain .answer { color: var(--muted); margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+  .qa { margin: 20px 0; } .qa .q { color: var(--gold); font-weight: 700; margin-top: 18px; } .qa .a { color: var(--text); margin-top: 6px; }
+  footer { margin-top: 70px; padding-top: 24px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; font-family: 'Source Code Pro', monospace; font-size: 0.88rem; }
+  footer a { color: var(--cyan); text-decoration: none; } footer .disabled { color: var(--muted); }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="kicker">xss_mastery &middot; Module 06</div>
+    <h1>Sources & Sinks</h1>
+    <div class="subtitle">One example becomes a map: every door untrusted data can walk in, every room it can cause trouble in.</div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <h2><span class="num">00</span>Before You Start</h2>
+  <p><strong>Direct prerequisites for this module:</strong></p>
+  <div class="prereq-bar">
+    <a class="prereq-tag" href="../05_reflected_xss_via_get/tutorial.html">Module 05 — Reflected XSS via GET</a>
+  </div>
+  <div class="callout gold">
+    <span class="label">Before You Start</span>
+    You need to have actually watched Module 05's attack execute — seen a
+    <code>&lt;script&gt;</code> tag from a URL run in your own browser. This
+    module generalizes that one example; if you skip straight here without
+    that concrete memory, "source" and "sink" will just be abstract words.
+  </div>
+
+  <h2><span class="num">01</span>The Big Analogy</h2>
+  <div class="callout gold">
+    <span class="label">Head First Moment</span>
+    <p>Module 05 showed you one door into the restaurant (the front
+    entrance, where GET requests walk in) and one dangerous room (the PA
+    system, which reads announcements aloud to everyone). But a real
+    restaurant has more than one door — the delivery entrance around back
+    (POST bodies), the comment card box by the register (cookies), even
+    the note a delivery driver scrawls on the receipt (the Referrer
+    header). And it has more than one dangerous room — the specials board
+    everyone reads (innerHTML), the intercom to the kitchen
+    (document.write), a photocopier that blindly executes whatever's
+    written on a page fed into it (eval).</p>
+    <p>A <strong>source</strong> is any door untrusted data can walk in
+    through. A <strong>sink</strong> is any room where, if that data
+    arrives without being clearly marked "this is just something someone
+    said, not an instruction," something dangerous can happen. Module 06
+    is the floor plan of the whole building.</p>
+  </div>
+
+  <table class="sst">
+    <tr><th>Sources (data can enter here)</th><th>Sinks (danger happens here, if unescaped)</th></tr>
+    <tr><td>GET query string (<code>$_GET</code> / <code>req.query</code>)</td><td><code>.innerHTML</code> assignment</td></tr>
+    <tr><td>POST body (<code>$_POST</code> / <code>req.body</code>)</td><td><code>document.write()</code></td></tr>
+    <tr><td>URL fragment (<code>location.hash</code>)</td><td><code>eval()</code></td></tr>
+    <tr><td>Referrer header (<code>document.referrer</code>)</td><td><code>insertAdjacentHTML()</code></td></tr>
+    <tr><td>Cookies (<code>document.cookie</code>, <code>$_COOKIE</code>)</td><td>PHP <code>echo</code>/<code>print</code> of HTML</td></tr>
+  </table>
+
+  <h2><span class="num">02</span>Building the Classifier</h2>
+  <p>Rather than just memorizing that table, Module 06 has you build a
+  tiny program that applies it. Here's the core decision logic from
+  <code>node/analyze.js</code>:</p>
+
+  <pre><code><span class="kw">function</span> <span class="fn">classify</span>(line) {
+  <span class="kw">const</span> sourceHit = SOURCES.find((s) => s.pattern.test(line));
+  <span class="kw">const</span> sinkHit = SINKS.find((s) => s.pattern.test(line));
+  <span class="kw">const</span> escaped = ESCAPE_MARKERS.test(line);
+
+  <span class="kw">if</span> (sourceHit && sinkHit && escaped) {
+    <span class="kw">return</span> <span class="str">'SAFE (escaping call seen before the sink)'</span>;
+  } <span class="kw">else if</span> (sourceHit && sinkHit) {
+    <span class="kw">return</span> <span class="str">'DANGEROUS (source flows into a sink, unescaped)'</span>;
+  }
+  <span class="cm">// source-only or sink-only lines fall through here -- see the full file</span>
+}</code></pre>
+
+  <div class="callout teal">
+    <span class="label">Why this matters</span>
+    Notice the classifier needs THREE pieces of information to reach a
+    verdict, not two: a source, a sink, AND whether escaping happened in
+    between. Most people, after Module 05, remember "sinks are dangerous"
+    but forget that a source reaching a sink is only half the story — the
+    other half, escaping, is exactly what Module 11 is going to teach you
+    to do properly.
+  </div>
+
+  <h2><span class="num">03</span>What the Classifier Actually Found</h2>
+  <p>Two of the ten samples are worth reading closely. First, the exact
+  bug from Module 05:</p>
+  <pre><code>echo "&lt;p&gt;You searched for: {$_GET['q']}&lt;/p&gt;";
+<span class="cm">&rarr; SOURCE: $_GET   SINK: echo   VERDICT: DANGEROUS</span></code></pre>
+
+  <p>And a line where the SAME source and SAME sink appear, but escaping
+  happened first — during a variable assignment, one statement before the
+  `echo`, not inline at the `echo` itself:</p>
+  <pre><code>$name = htmlspecialchars($_POST['name']); echo "&lt;p&gt;Hi, $name&lt;/p&gt;";
+<span class="cm">&rarr; SOURCE: $_POST   SINK: echo   VERDICT: SAFE (escaped)</span></code></pre>
+
+  <p>Both lines have a source and a sink. Only the presence of
+  <code>htmlspecialchars()</code> somewhere between them changes the
+  verdict — which is the entire lesson of Module 06 in two lines of code.</p>
+
+  <h2><span class="num">04</span>Run It on Windows 11</h2>
+  <div class="win-box">
+    <div class="title">Terminal</div>
+    <pre><code>cd xss_mastery\modules\06_sources_and_sinks
+.\run.ps1 -Target run-node</code></pre>
+    <div class="title">Expected output (excerpt)</div>
+    <pre><code>LINE:    element.innerHTML = location.hash.substring(1);
+SOURCE:  URL fragment (location.hash)
+SINK:    innerHTML assignment
+VERDICT: DANGEROUS (untrusted source flows directly into a sink, unescaped)
+---
+LINE:    element.textContent = location.hash.substring(1);
+SOURCE:  URL fragment (location.hash)
+VERDICT: source only -- no dangerous sink matched on this line (likely fine here)</code></pre>
+    <div class="title">If you have PHP installed</div>
+    <pre><code>.\run.ps1 -Target run-php</code></pre>
+  </div>
+
+  <h2><span class="num">05</span>Brain Exercise</h2>
+  <div class="brain">
+    <span class="label">Brain Exercise</span>
+    <p>The classifier printed this verdict for one sample:</p>
+    <pre><code>$stmt->bindParam(':q', $_GET['q']);
+<span class="cm">&rarr; SOURCE: $_GET   VERDICT: source only -- no dangerous sink matched (likely fine here)</span></code></pre>
+    <p>Does "no XSS sink matched" mean this line is completely safe to
+    ship?</p>
+    <div class="answer">
+      <strong>No — it means this line is safe from XSS specifically. It
+      says nothing about SQL injection.</strong> <code>bindParam</code> is
+      a parameterized-query API, which IS the correct defense against SQL
+      injection — but that's a completely different vulnerability class
+      with its own sources and sinks (here, the "sink" would be raw SQL
+      string concatenation, not HTML rendering). This module's classifier
+      was built with exactly one job: flag XSS-relevant flows. A clean
+      verdict from this tool is not a clean bill of health for the whole
+      line — it's a clean bill of health for the one category of bug this
+      tool was built to catch. Real security reviews run multiple
+      specialized lenses over the same code for exactly this reason.
+    </div>
+  </div>
+
+  <h2><span class="num">06</span>There Are No Dumb Questions</h2>
+  <div class="qa">
+    <div class="q">Q: Is document.cookie always dangerous to read?</div>
+    <div class="a">A: Reading `document.cookie` isn't dangerous by itself — it becomes a source of concern when that cookie value then flows into a sink (e.g. logging it somewhere an attacker can read, or writing it into the DOM). Module 13 (Cookie & Session Hardening) covers the flip side: making sure your MOST sensitive cookies (session tokens) can't even be read by JavaScript at all, via the `HttpOnly` flag — removing them as a source entirely.</div>
+
+    <div class="q">Q: My framework auto-escapes everything by default. Do I still need to know this table?</div>
+    <div class="a">A: Yes — auto-escaping usually covers the most common sink (writing text into HTML body content) but frequently does NOT cover every sink. Attribute contexts, inline `<script>` blocks, and `href`/`src` URLs each have different escaping rules, and "my framework handles it" is exactly the assumption that leads people to manually call `dangerouslySetInnerHTML` (React) or `{!! !!}` (Laravel Blade) — an explicit escape hatch out of the auto-escaping — without realizing they've just walked into an unescaped sink by hand.</div>
+
+    <div class="q">Q: Why isn't $_SERVER['HTTP_USER_AGENT'] in the sources table?</div>
+    <div class="a">A: Good catch — it should be considered one, and real applications have shipped XSS bugs by logging or displaying the User-Agent string unescaped (e.g., an admin dashboard showing "recent visitors and their browsers"). This module's table is a representative sample for teaching, not an exhaustive list — the SKILL being taught is "given a request, ask: where could a value in this request end up, unescaped?" — a skill that generalizes to headers this table doesn't name at all.</div>
+  </div>
+
+  <h2><span class="num">07</span>What's Next</h2>
+  <div class="callout teal">
+    <span class="label">What's Next</span>
+    Module 07 — <strong>Stored XSS via POST</strong> — takes a source
+    you've seen in this table (POST body) and, instead of reflecting it
+    back immediately like Module 05, saves it to storage first — so the
+    sink fires for every future visitor, not just the person who submitted
+    it. Now is the right time because you have the full source/sink
+    vocabulary in hand to recognize exactly what's different (and what
+    isn't) about a stored variant of the same underlying bug.
+  </div>
+
+</div>
+
+<div class="wrap">
+  <footer>
+    <a href="../05_reflected_xss_via_get/tutorial.html">&larr; Module 05 — Reflected XSS via GET</a>
+    <a href="../07_stored_xss_via_post/tutorial.html">Module 07 — Stored XSS via POST &rarr;</a>
+  </footer>
+</div>
+
+</body>
+</html>
