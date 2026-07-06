@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Module 12 — Content Security Policy | xss_mastery</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;900&family=Source+Code+Pro:wght@400;600&family=Lato:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0b0f1a;      --bg2:#111827;    --bg3:#1a2235;
+    --card:#141c2e;    --border:#1e3a5f; --gold:#f5c842;
+    --cyan:#38bdf8;    --teal:#0d9488;   --red:#f87171;
+    --green:#4ade80;   --purple:#a78bfa; --orange:#fb923c;
+    --text:#e2e8f0;    --muted:#7a9bbf;  --code-bg:#060d1a;
+  }
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: 'Lato', sans-serif; line-height: 1.65; margin: 0; padding: 0 0 80px 0; }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 0 28px; }
+  header.hero { background: linear-gradient(180deg, var(--bg2) 0%, var(--bg) 100%); border-bottom: 1px solid var(--border); padding: 48px 0 32px 0; }
+  h1, h2, h3 { font-family: 'Playfair Display', serif; color: var(--text); letter-spacing: 0.01em; }
+  h1 { font-size: 2.3rem; margin: 0 0 8px 0; color: var(--gold); }
+  .kicker { font-family: 'Source Code Pro', monospace; color: var(--cyan); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.12em; }
+  .subtitle { color: var(--muted); font-size: 1.1rem; margin-top: 6px; }
+  h2 { font-size: 1.6rem; margin-top: 56px; padding-bottom: 10px; border-bottom: 2px solid var(--border); color: var(--cyan); }
+  h2 .num { display: inline-block; font-family: 'Source Code Pro', monospace; color: var(--gold); margin-right: 10px; }
+  h3 { color: var(--gold); font-size: 1.15rem; margin-top: 28px; }
+  p { margin: 14px 0; }
+  code, pre, .mono { font-family: 'Source Code Pro', monospace; }
+  pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px; padding: 18px 20px; overflow-x: auto; font-size: 0.87rem; line-height: 1.6; }
+  pre code { background: none; padding: 0; }
+  code { background: var(--bg3); padding: 2px 6px; border-radius: 4px; font-size: 0.88em; }
+  .cm { color: var(--muted); font-style: italic; } .kw { color: var(--purple); } .str { color: var(--green); } .fn { color: var(--cyan); }
+  .prereq-bar { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 22px 0; }
+  .prereq-tag { display: inline-block; background: var(--bg3); border: 1px solid var(--border); color: var(--cyan); text-decoration: none; padding: 6px 14px; border-radius: 20px; font-family: 'Source Code Pro', monospace; font-size: 0.82rem; }
+  .callout { border-left: 4px solid var(--gold); background: var(--card); padding: 18px 22px; border-radius: 6px; margin: 20px 0; }
+  .callout .label { font-family: 'Source Code Pro', monospace; text-transform: uppercase; font-size: 0.72rem; letter-spacing: 0.1em; color: var(--gold); display: block; margin-bottom: 8px; }
+  .callout.gold { border-left-color: var(--gold); } .callout.gold .label { color: var(--gold); }
+  .callout.teal { border-left-color: var(--teal); } .callout.teal .label { color: var(--teal); }
+  .callout.red { border-left-color: var(--red); } .callout.red .label { color: var(--red); }
+  .callout.green { border-left-color: var(--green); } .callout.green .label { color: var(--green); }
+  table.sst { width: 100%; border-collapse: collapse; margin: 18px 0; font-size: 0.9rem; }
+  table.sst th { text-align: left; color: var(--gold); font-family: 'Source Code Pro', monospace; font-size: 0.75rem; text-transform: uppercase; border-bottom: 2px solid var(--border); padding: 8px 10px; }
+  table.sst td { padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .win-box { background: var(--code-bg); border: 1px solid var(--teal); border-radius: 8px; padding: 4px 22px 18px 22px; margin: 18px 0; }
+  .win-box .title { font-family: 'Source Code Pro', monospace; color: var(--teal); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; padding-top: 14px; }
+  .win-box pre { border: none; background: none; padding: 10px 0; margin: 0; }
+  .brain { background: var(--card); border: 2px dashed var(--purple); border-radius: 8px; padding: 20px 24px; margin: 20px 0; }
+  .brain .label { font-family: 'Source Code Pro', monospace; color: var(--purple); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.1em; }
+  .brain .answer { color: var(--muted); margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+  .qa { margin: 20px 0; } .qa .q { color: var(--gold); font-weight: 700; margin-top: 18px; } .qa .a { color: var(--text); margin-top: 6px; }
+  footer { margin-top: 70px; padding-top: 24px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; font-family: 'Source Code Pro', monospace; font-size: 0.88rem; }
+  footer a { color: var(--cyan); text-decoration: none; } footer .disabled { color: var(--muted); }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="kicker">xss_mastery &middot; Module 12</div>
+    <h1>Content Security Policy</h1>
+    <div class="subtitle">The identical bug. The identical payload. One HTTP header changes everything.</div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <h2><span class="num">00</span>Before You Start</h2>
+  <p><strong>Direct prerequisites for this module:</strong></p>
+  <div class="prereq-bar">
+    <a class="prereq-tag" href="../11_output_encoding_defenses/tutorial.html">Module 11 — Output Encoding Defenses</a>
+  </div>
+  <div class="callout gold">
+    <span class="label">Before You Start</span>
+    You need to accept, uncomfortably, that this module's vulnerable code
+    is the SAME broken code from Module 05 — untouched, unfixed. That's
+    deliberate. This module is about a defense that doesn't require the
+    bug to be fixed first.
+  </div>
+
+  <h2><span class="num">01</span>The Big Analogy</h2>
+  <div class="callout gold">
+    <span class="label">Head First Moment</span>
+    <p>Every defense so far has been about training the waiter to read
+    order slips correctly. Content-Security-Policy is different: it's a
+    standing house rule, posted at the PA system itself, that says "this
+    PA system will only ever broadcast pre-approved announcements from
+    the manager's office — it will physically refuse to read anything
+    handed to it live at the counter, no matter who wrote it or what it
+    says." Even if a fake announcement slips past the waiter untrained,
+    unnoticed, exactly as written — the PA system itself refuses to say
+    it aloud, because it was never pre-approved.</p>
+  </div>
+
+  <h2><span class="num">02</span>Three Identical Bugs, Three Different Outcomes</h2>
+  <table class="sst">
+    <tr><th>Route</th><th>Header</th><th>Verified result</th></tr>
+    <tr><td><code>/no-csp</code></td><td>(none)</td><td><code>document.title</code> became <code>"NOCSP-EXECUTED"</code> — script ran</td></tr>
+    <tr><td><code>/csp-strict</code></td><td><code>script-src 'self'</code></td><td>title stayed as the page's own title — script blocked</td></tr>
+    <tr><td><code>/csp-unsafe-inline</code></td><td><code>script-src 'self' 'unsafe-inline'</code></td><td><code>document.title</code> became <code>"UNSAFE-INLINE-EXECUTED"</code> — script ran again</td></tr>
+  </table>
+
+  <p>All three routes serve the byte-for-byte identical vulnerable line:</p>
+  <pre><code>&lt;p&gt;You searched for: <span class="cm">${q}</span>&lt;/p&gt;   <span class="cm">// still unescaped, still Module 05's exact bug</span></code></pre>
+
+  <p>The only difference between "executed" and "blocked" is one response header:</p>
+  <pre><code><span class="cm">// csp-strict:</span>
+res.setHeader(<span class="str">'Content-Security-Policy'</span>, <span class="str">"default-src 'self'; script-src 'self'"</span>);
+
+<span class="cm">// csp-unsafe-inline -- quietly re-opens the exact hole:</span>
+res.setHeader(<span class="str">'Content-Security-Policy'</span>, <span class="str">"default-src 'self'; script-src 'self' 'unsafe-inline'"</span>);</code></pre>
+
+  <div class="callout green">
+    <span class="label">Verified</span>
+    All three outcomes above were tested live, with the identical payload
+    (<code>&lt;script&gt;document.title='...'&lt;/script&gt;</code>) against
+    all three routes. Only the strict policy actually blocked execution.
+  </div>
+
+  <div class="callout red">
+    <span class="label">Why this matters</span>
+    <code>'self'</code> means "only scripts loaded FROM this exact origin,
+    as separate script files." An inline <code>&lt;script&gt;</code> block
+    has no origin of its own — it's just text sitting inside the HTML —
+    so under a strict policy, the browser refuses to run it categorically,
+    regardless of whether that text came from your own template or an
+    attacker's injected payload. <code>'unsafe-inline'</code> is a named
+    escape hatch that says "actually, do trust inline script text after
+    all" — which un-does exactly the protection that mattered.
+  </div>
+
+  <h2><span class="num">03</span>Run It on Windows 11</h2>
+  <div class="win-box">
+    <div class="title">Terminal</div>
+    <pre><code>cd xss_mastery\modules\12_content_security_policy
+.\run.ps1 -Target run-node</code></pre>
+    <div class="title">Test all three, same payload each time</div>
+    <pre><code>http://localhost:8000/no-csp?q=%3Cscript%3Ealert(1)%3C%2Fscript%3E
+http://localhost:8000/csp-strict?q=%3Cscript%3Ealert(1)%3C%2Fscript%3E
+http://localhost:8000/csp-unsafe-inline?q=%3Cscript%3Ealert(1)%3C%2Fscript%3E</code></pre>
+    <div class="title">Expected result</div>
+    <pre><code>no-csp:            alert fires
+csp-strict:        no alert -- check DevTools console for a CSP violation message
+csp-unsafe-inline: alert fires again</code></pre>
+    <div class="title">If you have PHP installed</div>
+    <pre><code>.\run.ps1 -Target run-php</code></pre>
+  </div>
+
+  <h2><span class="num">04</span>Brain Exercise</h2>
+  <div class="brain">
+    <span class="label">Brain Exercise</span>
+    <p>A team ships `script-src 'self'` and calls the XSS bug "mitigated,"
+    closes the ticket, and never touches Module 05's actual encoding bug.
+    Six months later, someone adds a new feature: a JSONP-style endpoint
+    at <code>/api/callback?cb=someFunctionName</code> that's also hosted
+    on the same origin — same site, same `'self'`. Does the original,
+    still-unfixed reflected XSS bug remain "mitigated"?</p>
+    <div class="answer">
+      <strong>Not necessarily — and this is a real, documented category of
+      CSP bypass, not a hypothetical.</strong> `'self'` trusts EVERY script
+      hosted on the same origin, including any endpoint that happens to
+      return attacker-influenceable JavaScript — a JSONP callback whose
+      function name comes from a query parameter is a classic example,
+      because the attacker controls part of what gets executed, and it's
+      still "from 'self'" as far as CSP is concerned. This is precisely
+      why Module 11's fix and Module 12's CSP are described as two
+      INDEPENDENT layers, not "either one is enough." The original
+      encoding bug was never actually gone — it was dormant, waiting for
+      any new same-origin endpoint that could be abused to smuggle
+      attacker-influenced execution back in under the umbrella of
+      `'self'`. Closing the ticket without fixing Module 05's actual bug
+      left a live vulnerability sitting behind a lock that a completely
+      unrelated, future feature accidentally picked.
+    </div>
+  </div>
+
+  <h2><span class="num">05</span>There Are No Dumb Questions</h2>
+  <div class="qa">
+    <div class="q">Q: Does CSP stop the stored XSS from Module 07 too?</div>
+    <div class="a">A: Yes, identically — CSP operates on the rendered page regardless of whether the injected script arrived via a URL parameter (reflected) or from stored data (persisted). The mechanism blocking inline script execution doesn't care where the HTML came from.</div>
+
+    <div class="q">Q: Does CSP stop the DOM-based XSS from Module 08?</div>
+    <div class="a">A: A strict script-src policy stops an ATTACKER'S injected inline `<script>` or `onerror`/`onload` handler from running, which covers many DOM XSS payloads (including Module 08's `<img onerror>` example) -- inline event handler attributes are blocked by the same 'self' script-src policy unless 'unsafe-inline' is present. It does not stop a vulnerability in your OWN legitimate script that mishandles `location.hash` correctly-as-written -- CSP restricts WHERE code can come from, not whether your own trusted code has a bug.</div>
+
+    <div class="q">Q: If CSP is this powerful, why doesn't every site just turn it on?</div>
+    <div class="a">A: Because retrofitting a strict CSP onto an existing, large application is often a significant undertaking — every inline script and inline event handler across the entire codebase needs to be moved to external files or given nonces, and every third-party script (analytics, ads, widgets) needs to be explicitly allowlisted. It's a real defense with a real adoption cost, which is exactly why misconfigurations like `'unsafe-inline'` are so common in practice: they're the path of least resistance for a team trying to "turn on CSP" without doing that refactoring work.</div>
+  </div>
+
+  <h2><span class="num">06</span>What's Next</h2>
+  <div class="callout teal">
+    <span class="label">What's Next</span>
+    Module 13 — <strong>Cookie & Session Hardening</strong> — returns to
+    the session cookies this course has used since Module 09 and asks:
+    what if the cookie itself could refuse to be read by the exact kind
+    of injected script Modules 05 through 08 demonstrated? Now is the
+    right time because you've just seen a browser-enforced policy stop an
+    attack outright — Module 13 shows another browser-enforced property
+    (`HttpOnly`) doing the same for your most sensitive cookie specifically.
+  </div>
+
+</div>
+
+<div class="wrap">
+  <footer>
+    <a href="../11_output_encoding_defenses/tutorial.html">&larr; Module 11 — Output Encoding Defenses</a>
+    <a href="../13_cookie_and_session_hardening/tutorial.html">Module 13 — Cookie & Session Hardening &rarr;</a>
+  </footer>
+</div>
+
+</body>
+</html>
