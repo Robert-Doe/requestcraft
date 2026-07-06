@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Module 14 — Input Validation as Defense-in-Depth | xss_mastery</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;900&family=Source+Code+Pro:wght@400;600&family=Lato:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0b0f1a;      --bg2:#111827;    --bg3:#1a2235;
+    --card:#141c2e;    --border:#1e3a5f; --gold:#f5c842;
+    --cyan:#38bdf8;    --teal:#0d9488;   --red:#f87171;
+    --green:#4ade80;   --purple:#a78bfa; --orange:#fb923c;
+    --text:#e2e8f0;    --muted:#7a9bbf;  --code-bg:#060d1a;
+  }
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: 'Lato', sans-serif; line-height: 1.65; margin: 0; padding: 0 0 80px 0; }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 0 28px; }
+  header.hero { background: linear-gradient(180deg, var(--bg2) 0%, var(--bg) 100%); border-bottom: 1px solid var(--border); padding: 48px 0 32px 0; }
+  h1, h2, h3 { font-family: 'Playfair Display', serif; color: var(--text); letter-spacing: 0.01em; }
+  h1 { font-size: 2.3rem; margin: 0 0 8px 0; color: var(--gold); }
+  .kicker { font-family: 'Source Code Pro', monospace; color: var(--cyan); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.12em; }
+  .subtitle { color: var(--muted); font-size: 1.1rem; margin-top: 6px; }
+  h2 { font-size: 1.6rem; margin-top: 56px; padding-bottom: 10px; border-bottom: 2px solid var(--border); color: var(--cyan); }
+  h2 .num { display: inline-block; font-family: 'Source Code Pro', monospace; color: var(--gold); margin-right: 10px; }
+  h3 { color: var(--gold); font-size: 1.15rem; margin-top: 28px; }
+  p { margin: 14px 0; }
+  code, pre, .mono { font-family: 'Source Code Pro', monospace; }
+  pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px; padding: 18px 20px; overflow-x: auto; font-size: 0.87rem; line-height: 1.6; }
+  pre code { background: none; padding: 0; }
+  code { background: var(--bg3); padding: 2px 6px; border-radius: 4px; font-size: 0.88em; }
+  .cm { color: var(--muted); font-style: italic; } .kw { color: var(--purple); } .str { color: var(--green); } .fn { color: var(--cyan); }
+  .prereq-bar { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 22px 0; }
+  .prereq-tag { display: inline-block; background: var(--bg3); border: 1px solid var(--border); color: var(--cyan); text-decoration: none; padding: 6px 14px; border-radius: 20px; font-family: 'Source Code Pro', monospace; font-size: 0.82rem; }
+  .callout { border-left: 4px solid var(--gold); background: var(--card); padding: 18px 22px; border-radius: 6px; margin: 20px 0; }
+  .callout .label { font-family: 'Source Code Pro', monospace; text-transform: uppercase; font-size: 0.72rem; letter-spacing: 0.1em; color: var(--gold); display: block; margin-bottom: 8px; }
+  .callout.gold { border-left-color: var(--gold); } .callout.gold .label { color: var(--gold); }
+  .callout.teal { border-left-color: var(--teal); } .callout.teal .label { color: var(--teal); }
+  .callout.red { border-left-color: var(--red); } .callout.red .label { color: var(--red); }
+  .callout.green { border-left-color: var(--green); } .callout.green .label { color: var(--green); }
+  table.sst { width: 100%; border-collapse: collapse; margin: 18px 0; font-size: 0.9rem; }
+  table.sst th { text-align: left; color: var(--gold); font-family: 'Source Code Pro', monospace; font-size: 0.75rem; text-transform: uppercase; border-bottom: 2px solid var(--border); padding: 8px 10px; }
+  table.sst td { padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .win-box { background: var(--code-bg); border: 1px solid var(--teal); border-radius: 8px; padding: 4px 22px 18px 22px; margin: 18px 0; }
+  .win-box .title { font-family: 'Source Code Pro', monospace; color: var(--teal); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; padding-top: 14px; }
+  .win-box pre { border: none; background: none; padding: 10px 0; margin: 0; }
+  .brain { background: var(--card); border: 2px dashed var(--purple); border-radius: 8px; padding: 20px 24px; margin: 20px 0; }
+  .brain .label { font-family: 'Source Code Pro', monospace; color: var(--purple); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.1em; }
+  .brain .answer { color: var(--muted); margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+  .qa { margin: 20px 0; } .qa .q { color: var(--gold); font-weight: 700; margin-top: 18px; } .qa .a { color: var(--text); margin-top: 6px; }
+  footer { margin-top: 70px; padding-top: 24px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; font-family: 'Source Code Pro', monospace; font-size: 0.88rem; }
+  footer a { color: var(--cyan); text-decoration: none; } footer .disabled { color: var(--muted); }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="kicker">xss_mastery &middot; Module 14</div>
+    <h1>Input Validation as Defense-in-Depth</h1>
+    <div class="subtitle">Asking "is this on my list?" beats asking "does this look bad?" — but only sometimes.</div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <h2><span class="num">00</span>Before You Start</h2>
+  <p><strong>Direct prerequisites for this module:</strong></p>
+  <div class="prereq-bar">
+    <a class="prereq-tag" href="../11_output_encoding_defenses/tutorial.html">Module 11 — Output Encoding Defenses</a>
+  </div>
+  <div class="callout gold">
+    <span class="label">Before You Start</span>
+    You need Module 07's Brain Exercise fresh in mind — the one about a
+    teammate proposing to block anything containing
+    <code>&lt;script&gt;</code>. This module builds a real, runnable
+    version of that exact mistake, next to a real fix, so you can verify
+    the lesson yourself instead of taking it on faith.
+  </div>
+
+  <h2><span class="num">01</span>The Big Analogy</h2>
+  <div class="callout gold">
+    <span class="label">Head First Moment</span>
+    <p>Imagine a restaurant's order slip has a "spice level" field that
+    should only ever say "mild," "medium," or "hot." A blocklist bouncer
+    checks incoming slips for obviously rude words and waves everything
+    else through. An allowlist host does something completely
+    different: they don't look for what's WRONG — they check the slip
+    against the exact three words that are RIGHT, and reject anything
+    that isn't one of them, no matter how innocent-looking. The bouncer
+    has to imagine every possible bad word in advance and will always
+    miss ones nobody thought of. The host doesn't need to imagine
+    anything — there are only three acceptable answers, and everything
+    else, seen or unseen, gets the same treatment.</p>
+  </div>
+
+  <h2><span class="num">02</span>Two Validators, Same Payload</h2>
+  <p>The blocklist checks for one specific bad pattern:</p>
+  <pre><code><span class="kw">const</span> isRejected = <span class="str">/&lt;script/i</span>.test(order); <span class="cm">// only catches THIS one pattern</span></code></pre>
+
+  <p>The allowlist checks against the only two values that should ever be valid:</p>
+  <pre><code><span class="kw">const</span> safeOrder = (order === <span class="str">'asc'</span> || order === <span class="str">'desc'</span>) ? order : <span class="str">'asc'</span>; <span class="cm">// anything else silently becomes the safe default</span></code></pre>
+
+  <table class="sst">
+    <tr><th>Route</th><th>Payload</th><th>Verified result</th></tr>
+    <tr><td><code>/blocklist</code></td><td><code>&lt;img src=x onerror=alert(1)&gt;</code></td><td>passed straight through, unescaped, in the raw response</td></tr>
+    <tr><td><code>/allowlist</code></td><td>same payload</td><td>silently replaced with <code>"asc"</code> — payload never reaches the page at all</td></tr>
+  </table>
+
+  <div class="callout green">
+    <span class="label">Verified</span>
+    <code>curl</code> against <code>/blocklist</code> with that exact
+    payload returned <code>Sort order: &lt;img src=x onerror=alert(1)&gt;</code>
+    — raw, unescaped, ready to execute in a browser. The identical
+    payload against <code>/allowlist</code> returned
+    <code>Sort order: asc</code> — completely inert, regardless of what
+    the attacker sent.
+  </div>
+
+  <div class="callout red">
+    <span class="label">Why this matters</span>
+    The blocklist's check ONLY knows about the literal substring
+    <code>&lt;script</code>. It has no idea <code>onerror</code>,
+    <code>onload</code>, <code>javascript:</code>, or a hundred other
+    execution techniques exist. Every blocklist is a bet that you've
+    thought of every dangerous pattern in advance — and Module 07 already
+    showed that bet losing. The allowlist makes no such bet: it doesn't
+    need to know what's dangerous, because it only ever accepts two
+    specific strings it already knows are fine.
+  </div>
+
+  <h2><span class="num">03</span>Where Allowlisting Can't Reach</h2>
+  <p>The <code>/freetext</code> route has no allowlist at all — because
+  none is possible:</p>
+  <pre><code><span class="cm">// how would you enumerate every legitimate comment a human might write?</span>
+<span class="kw">const</span> msg = params.msg ?? <span class="str">''</span>;
+res.end(page(<span class="str">'freetext'</span>, `&lt;p&gt;Message: <span class="cm">${encodeHtml(msg)}</span>&lt;/p&gt;`));</code></pre>
+  <p>For a field like this, Module 11's encoding is not one option among
+  several — it's the only defense that generalizes to unbounded, free-form input.</p>
+
+  <h2><span class="num">04</span>Run It on Windows 11</h2>
+  <div class="win-box">
+    <div class="title">Terminal</div>
+    <pre><code>cd xss_mastery\modules\14_input_validation_as_defense_in_depth
+.\run.ps1 -Target run-node</code></pre>
+    <div class="title">Compare the two routes</div>
+    <pre><code>curl "http://localhost:8000/blocklist?order=%3Cimg%20src%3Dx%20onerror%3Dalert(1)%3E"
+curl "http://localhost:8000/allowlist?order=%3Cimg%20src%3Dx%20onerror%3Dalert(1)%3E"</code></pre>
+    <div class="title">Expected output</div>
+    <pre><code>blocklist:  Sort order: &lt;img src=x onerror=alert(1)&gt;   (raw, dangerous)
+allowlist:  Sort order: asc                               (payload discarded entirely)</code></pre>
+    <div class="title">If you have PHP installed</div>
+    <pre><code>.\run.ps1 -Target run-php</code></pre>
+  </div>
+
+  <h2><span class="num">05</span>Brain Exercise</h2>
+  <div class="brain">
+    <span class="label">Brain Exercise</span>
+    <p>A teammate wants to extend the allowlist idea to the guestbook's
+    "name" field from Module 07: "Let's allowlist names to only letters,
+    numbers, and spaces — that'll stop any XSS payload in that field
+    completely, and we can drop the encoding call since it's redundant."
+    Evaluate this plan.</p>
+    <div class="answer">
+      <strong>The allowlist part is reasonable. Dropping the encoding call
+      is the mistake — and it's the exact same mistake Decision #2 in this
+      module's DECISIONS.md was written to prevent.</strong> A
+      letters/numbers/spaces allowlist WOULD stop this specific payload
+      shape. But it constrains a field that arguably shouldn't be that
+      constrained in the first place — real names legitimately contain
+      apostrophes (O'Brien), hyphens (Smith-Jones), and non-ASCII letters
+      (José, Müller) — so the "safe" allowlist here is actually too
+      strict for a name field, a real usability cost. Now suppose six
+      months later, someone reasonably loosens the allowlist to permit
+      apostrophes and accented characters, because real users are getting
+      rejected. If the encoding call was removed on the theory that
+      "validation already makes this safe," the fix that makes the field
+      MORE usable simultaneously reopens the exact XSS bug this module
+      exists to prevent — silently, with no compiler warning, because
+      encoding wasn't there to catch what the loosened validation now
+      allows through. This is precisely why Module 14's own `/allowlist`
+      route keeps the encoding call even where it's currently redundant:
+      validation rules change over time; the encoding call at the sink
+      should never depend on today's validation rules staying exactly as strict as they are right now.
+    </div>
+  </div>
+
+  <h2><span class="num">06</span>There Are No Dumb Questions</h2>
+  <div class="qa">
+    <div class="q">Q: Is a blocklist ever appropriate for anything?</div>
+    <div class="a">A: Blocklists can be a reasonable SECONDARY signal (flagging suspicious input for review, rate-limiting, logging) but should never be the sole security control for something as consequential as XSS prevention, precisely because they require anticipating every attack variant in advance — an inherently losing position against a determined attacker.</div>
+
+    <div class="q">Q: What about numeric fields, like an "age" or "quantity"?</div>
+    <div class="a">A: Those are actually a form of allowlisting too — "must parse as an integer between 0 and 150" is just as much an allowlist as "must be exactly 'asc' or 'desc'," just over a numeric range instead of a fixed set of strings. The same principle applies: define what's acceptable, reject everything else, regardless of what specific bad thing you can imagine.</div>
+
+    <div class="q">Q: Does this module mean I should validate on the client side (in JavaScript) instead of the server?</div>
+    <div class="a">A: Client-side validation is a UX nicety (instant feedback without a round-trip) but provides ZERO security value on its own — anyone can bypass client-side JavaScript entirely and send a raw request directly (exactly how this module's own curl commands worked, with no browser involved at all). Every validation check that matters for security must be enforced server-side; client-side validation, if present, is purely a convenience layered on top.</div>
+  </div>
+
+  <h2><span class="num">07</span>What's Next</h2>
+  <div class="callout teal">
+    <span class="label">What's Next</span>
+    Module 15 — <strong>File Upload Abuse</strong> — applies this exact
+    allowlist-vs-blocklist lesson to a higher-stakes field: file uploads,
+    where a blocklist-style check ("reject .php extensions") fails for
+    reasons directly analogous to what you just saw here. Now is the
+    right time because you have the allowlist/blocklist vocabulary fresh,
+    ready to apply to a case where the stakes are considerably higher
+    than a sort-order parameter.
+  </div>
+
+</div>
+
+<div class="wrap">
+  <footer>
+    <a href="../13_cookie_and_session_hardening/tutorial.html">&larr; Module 13 — Cookie & Session Hardening</a>
+    <a href="../15_file_upload_abuse/tutorial.html">Module 15 — File Upload Abuse &rarr;</a>
+  </footer>
+</div>
+
+</body>
+</html>
