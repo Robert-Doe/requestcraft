@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Module 01 — HTTP Request Anatomy | xss_mastery</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;900&family=Source+Code+Pro:wght@400;600&family=Lato:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0b0f1a;      --bg2:#111827;    --bg3:#1a2235;
+    --card:#141c2e;    --border:#1e3a5f; --gold:#f5c842;
+    --cyan:#38bdf8;    --teal:#0d9488;   --red:#f87171;
+    --green:#4ade80;   --purple:#a78bfa; --orange:#fb923c;
+    --text:#e2e8f0;    --muted:#7a9bbf;  --code-bg:#060d1a;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Lato', sans-serif;
+    line-height: 1.65;
+    margin: 0;
+    padding: 0 0 80px 0;
+  }
+
+  .wrap { max-width: 860px; margin: 0 auto; padding: 0 28px; }
+
+  header.hero {
+    background: linear-gradient(180deg, var(--bg2) 0%, var(--bg) 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 48px 0 32px 0;
+  }
+
+  h1, h2, h3 {
+    font-family: 'Playfair Display', serif;
+    color: var(--text);
+    letter-spacing: 0.01em;
+  }
+
+  h1 { font-size: 2.3rem; margin: 0 0 8px 0; color: var(--gold); }
+  .kicker {
+    font-family: 'Source Code Pro', monospace;
+    color: var(--cyan);
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+  }
+  .subtitle { color: var(--muted); font-size: 1.1rem; margin-top: 6px; }
+
+  h2 {
+    font-size: 1.6rem;
+    margin-top: 56px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--border);
+    color: var(--cyan);
+  }
+  h2 .num {
+    display: inline-block;
+    font-family: 'Source Code Pro', monospace;
+    color: var(--gold);
+    margin-right: 10px;
+  }
+
+  h3 { color: var(--gold); font-size: 1.15rem; margin-top: 28px; }
+
+  p { margin: 14px 0; }
+
+  code, pre, .mono { font-family: 'Source Code Pro', monospace; }
+
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 18px 20px;
+    overflow-x: auto;
+    font-size: 0.87rem;
+    line-height: 1.6;
+  }
+  pre code { background: none; padding: 0; }
+  code {
+    background: var(--bg3);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.88em;
+  }
+
+  .cm { color: var(--muted); font-style: italic; }
+  .kw { color: var(--purple); }
+  .str { color: var(--green); }
+  .fn { color: var(--cyan); }
+
+  /* prereq bar */
+  .prereq-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 14px 0 22px 0;
+  }
+  .prereq-tag {
+    display: inline-block;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--cyan);
+    text-decoration: none;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.82rem;
+  }
+  .prereq-tag.none {
+    color: var(--muted);
+    border-style: dashed;
+  }
+
+  /* callouts */
+  .callout {
+    border-left: 4px solid var(--gold);
+    background: var(--card);
+    padding: 18px 22px;
+    border-radius: 6px;
+    margin: 20px 0;
+  }
+  .callout .label {
+    font-family: 'Source Code Pro', monospace;
+    text-transform: uppercase;
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    color: var(--gold);
+    display: block;
+    margin-bottom: 8px;
+  }
+  .callout.gold  { border-left-color: var(--gold); }
+  .callout.gold .label { color: var(--gold); }
+  .callout.teal  { border-left-color: var(--teal); }
+  .callout.teal .label { color: var(--teal); }
+  .callout.red   { border-left-color: var(--red); }
+  .callout.red .label { color: var(--red); }
+
+  /* diagram grid for the restaurant analogy */
+  .diagram {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin: 18px 0;
+  }
+  .diagram .cell {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+  }
+  .diagram .cell h4 {
+    margin: 0 0 8px 0;
+    font-family: 'Playfair Display', serif;
+    font-size: 1.05rem;
+  }
+  .diagram .get h4 { color: var(--cyan); }
+  .diagram .post h4 { color: var(--orange); }
+  .diagram .cell p { margin: 4px 0; font-size: 0.93rem; color: var(--muted); }
+  .diagram .cell .tag {
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.78rem;
+    color: var(--text);
+    background: var(--bg2);
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+
+  /* run it box */
+  .win-box {
+    background: var(--code-bg);
+    border: 1px solid var(--teal);
+    border-radius: 8px;
+    padding: 4px 22px 18px 22px;
+    margin: 18px 0;
+  }
+  .win-box .title {
+    font-family: 'Source Code Pro', monospace;
+    color: var(--teal);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding-top: 14px;
+  }
+  .win-box pre { border: none; background: none; padding: 10px 0; margin: 0; }
+
+  /* brain exercise */
+  .brain {
+    background: var(--card);
+    border: 2px dashed var(--purple);
+    border-radius: 8px;
+    padding: 20px 24px;
+    margin: 20px 0;
+  }
+  .brain .label {
+    font-family: 'Source Code Pro', monospace;
+    color: var(--purple);
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+  }
+  .brain .answer {
+    color: var(--muted);
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+  }
+
+  /* Q&A */
+  .qa { margin: 20px 0; }
+  .qa .q {
+    color: var(--gold);
+    font-weight: 700;
+    margin-top: 18px;
+  }
+  .qa .a { color: var(--text); margin-top: 6px; }
+
+  footer {
+    margin-top: 70px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.88rem;
+  }
+  footer a { color: var(--cyan); text-decoration: none; }
+  footer .disabled { color: var(--muted); }
+
+  .badge {
+    display: inline-block;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.75rem;
+    padding: 3px 10px;
+    border-radius: 4px;
+    margin-right: 6px;
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="kicker">xss_mastery &middot; Module 01</div>
+    <h1>HTTP Request Anatomy</h1>
+    <div class="subtitle">Before GET vs POST means anything, you need to see the bytes both of them actually are.</div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- ============ 00 — Before You Start ============ -->
+  <h2><span class="num">00</span>Before You Start</h2>
+
+  <p><strong>Direct prerequisites for this module:</strong></p>
+  <div class="prereq-bar">
+    <span class="prereq-tag none">None — Module 01 is the start of the course</span>
+  </div>
+
+  <div class="callout gold">
+    <span class="label">Before You Start</span>
+    You need to be comfortable with three things, and nothing more: running a
+    command in a terminal (<code>cd</code> into a folder, run a script), the
+    general idea that a browser and a server "talk" to each other somehow, and
+    the fact that <code>curl</code> is a program that can send a web request
+    from your command line instead of a browser. If any of those three feel
+    shaky, this module is actually the right place to firm them up — you
+    don't need to go anywhere first.
+  </div>
+
+  <!-- ============ 01 — The Big Analogy ============ -->
+  <h2><span class="num">01</span>The Big Analogy</h2>
+
+  <div class="callout gold">
+    <span class="label">Head First Moment</span>
+    <p>Picture a restaurant. Right now, forget the host, forget the waiter,
+    forget the menu — forget everyone whose job is to <em>understand</em>
+    what a customer wants. Just picture the doorbell camera above the front
+    entrance. It doesn't know what a "reservation" is. It doesn't know what
+    an "order" is. It just records <em>exactly</em> what arrives at the
+    door — every word, every sound, completely unfiltered — and hands that
+    raw recording to whoever asks for it.</p>
+
+    <p>That doorbell camera is what Module 01 builds. Before you ever write
+    <code>$_GET</code> or <code>req.body</code>, you're going to be the
+    doorbell camera: a program that listens on a port and prints <em>exactly</em>
+    what a GET request and a POST request look like, byte for byte, before
+    any framework has organized them into something friendlier.</p>
+  </div>
+
+  <div class="diagram">
+    <div class="cell get">
+      <h4>GET — "What's on the menu?"</h4>
+      <p>The customer stands in the doorway and asks a question out loud.
+      Everyone nearby can hear it. Nothing in the kitchen changes because of it.</p>
+      <p class="tag">GET /menu?course=dessert HTTP/1.1</p>
+    </div>
+    <div class="cell post">
+      <h4>POST — "Here's my order"</h4>
+      <p>The customer hands a sealed ticket to a runner, who carries it
+      straight to the kitchen. The kitchen changes state — a dish gets made.</p>
+      <p class="tag">POST /order HTTP/1.1<br>&nbsp;&nbsp;(ticket in the body)</p>
+    </div>
+  </div>
+
+  <p>Notice what the diagram is really showing you: <strong>both of these are
+  just words arriving at a door.</strong> The only difference, at the raw
+  level, is <em>where</em> the information lives — shouted publicly in the
+  doorway (the URL) versus written on a ticket that gets carried in privately
+  (the body). Nothing about GET or POST is magic. It's a convention about
+  placement, and conventions can be violated. That single sentence is the
+  seed of half the vulnerabilities you'll build and break in this course.</p>
+
+  <!-- ============ 02 — What a socket even is ============ -->
+  <h2><span class="num">02</span>What a Socket Actually Is</h2>
+
+  <p>A <strong>socket</strong> (a numbered endpoint your operating system
+  hands out so two programs on a network can exchange bytes) is the doorbell
+  camera's actual hardware. When your browser or <code>curl</code> "sends a
+  GET request," what really happens is: your OS opens a TCP connection to a
+  port on the server, and then just... writes text into it. Plain text. No
+  encryption by default, no special format beyond what both sides agree to
+  interpret as HTTP.</p>
+
+  <p>The text your browser writes for a GET request looks almost exactly
+  like what you'd type if you opened the socket by hand:</p>
+
+  <pre><code>GET /search?q=hello HTTP/1.1
+Host: localhost:8000
+User-Agent: curl/8.12.1
+Accept: */*
+</code></pre>
+
+  <p>And for a POST request, the only structural difference is that there's
+  now a blank line followed by a body — the sealed ticket handed to the kitchen:</p>
+
+  <pre><code>POST /comment HTTP/1.1
+Host: localhost:8000
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 20
+
+name=bob&message=hi
+</code></pre>
+
+  <div class="callout teal">
+    <span class="label">Why this matters</span>
+    Every "hidden" thing a POST request does is only hidden from the URL bar
+    and browser history — it is not hidden from the network, from the
+    server's memory, or from anyone who can read the raw bytes, exactly as
+    you're about to do yourself. That distinction — hidden from casual view
+    vs. actually protected — is one you'll rely on constantly once you get
+    to CSRF and cookie security later in this course.
+  </div>
+
+  <!-- ============ 03 — Building the raw listener ============ -->
+  <h2><span class="num">03</span>Building the Raw Listener</h2>
+
+  <p>Here's the core of <code>node/raw_server.js</code> — the doorbell
+  camera itself. Every line that isn't a trivial assignment has a comment
+  explaining <em>why</em> it's there, not just what it does:</p>
+
+  <pre><code><span class="kw">const</span> net = require(<span class="str">'net'</span>); <span class="cm">// Node's raw TCP module -- one level below 'http'</span>
+
+<span class="kw">const</span> PORT = 8000;              <span class="cm">// arbitrary unprivileged port</span>
+<span class="kw">const</span> READ_BUFFER_BYTES = 8192; <span class="cm">// 8 KB -- plenty for this course's tiny demo requests</span>
+
+<span class="kw">function</span> <span class="fn">handleConnection</span>(socket) {
+  socket.on(<span class="str">'data'</span>, (chunk) => {
+    <span class="kw">const</span> raw = chunk.toString(<span class="str">'utf8'</span>); <span class="cm">// Buffer -&gt; string, purely so we can print it</span>
+
+    console.log(<span class="str">'--- RAW BYTES RECEIVED ---'</span>);
+    console.log(raw);                 <span class="cm">// print it completely unparsed -- that's the whole point</span>
+    console.log(<span class="str">'--- END ---\n'</span>);
+
+    socket.write(                     <span class="cm">// minimal response so curl doesn't hang</span>
+      <span class="str">'HTTP/1.1 200 OK\r\n'</span> +
+      <span class="str">'Content-Type: text/plain\r\n'</span> +
+      <span class="str">'Content-Length: 5\r\n'</span> +
+      <span class="str">'\r\n'</span> +
+      <span class="str">'seen\n'</span>
+    );
+    socket.end();                     <span class="cm">// one request per connection at this stage</span>
+  });
+}
+</code></pre>
+
+  <div class="callout gold">
+    <span class="label">Why this matters</span>
+    Look closely at <code>chunk.toString('utf8')</code>. That line is a
+    decision, not a formality — it assumes the bytes are UTF-8 text. A real
+    HTTP body can be binary (an uploaded image, for instance), and a real
+    parser has to know <em>when</em> it's safe to treat bytes as text and
+    when it isn't. You'll see this exact assumption become load-bearing
+    again in Module 15 (File Upload Abuse).
+  </div>
+
+  <p>The full file — including the "only one connection at a time" logic —
+  lives in <code>node/raw_server.js</code>, fully commented per line. The
+  PHP equivalent, <code>php/raw_server.php</code>, does the identical job
+  with <code>stream_socket_server()</code> and <code>fread()</code>; it's
+  real, complete code, ready the moment you install PHP.</p>
+
+  <h3>A small but real contrast between the two runtimes</h3>
+  <p>The Node version needs an explicit <code>acceptingConnections</code>
+  flag to stop two clients being handled at once, because Node's socket
+  model is event-driven by default — it would happily interleave two
+  clients' output if you let it. The PHP version gets the same "one at a
+  time" behavior for free, because <code>stream_socket_accept()</code>
+  blocks until a client connects and the script simply doesn't call it
+  again until the current one is closed. Same observable behavior, two
+  completely different reasons — a preview of a theme that will keep
+  recurring as this course compares PHP and Node.</p>
+
+  <!-- ============ 04 — Run It ============ -->
+  <h2><span class="num">04</span>Run It on Windows 11</h2>
+
+  <div class="win-box">
+    <div class="title">Terminal 1 — start the listener</div>
+    <pre><code>cd xss_mastery\modules\01_http_request_anatomy
+.\run.ps1 -Target run-node</code></pre>
+    <div class="title">Expected output</div>
+    <pre><code>Raw TCP listener up on http://localhost:8000
+Send it a GET and a POST with curl and watch the raw bytes appear.</code></pre>
+
+    <div class="title">Terminal 2 — send a GET</div>
+    <pre><code>curl "http://localhost:8000/search?q=hello"</code></pre>
+
+    <div class="title">Terminal 1 will now print</div>
+    <pre><code>--- RAW BYTES RECEIVED ---
+GET /search?q=hello HTTP/1.1
+Host: localhost:8000
+User-Agent: curl/8.12.1
+Accept: */*
+
+--- END ---</code></pre>
+
+    <div class="title">Terminal 2 — now send a POST</div>
+    <pre><code>curl -X POST "http://localhost:8000/comment" -d "name=bob&message=hi"</code></pre>
+
+    <div class="title">Terminal 1 will now print</div>
+    <pre><code>--- RAW BYTES RECEIVED ---
+POST /comment HTTP/1.1
+Host: localhost:8000
+User-Agent: curl/8.12.1
+Accept: */*
+Content-Length: 19
+Content-Type: application/x-www-form-urlencoded
+
+name=bob&message=hi
+--- END ---</code></pre>
+
+    <div class="title">If you have PHP installed</div>
+    <pre><code>.\run.ps1 -Target run-php</code></pre>
+    <p style="color:var(--muted); font-size:0.88rem;">Same demo, same output shape — run it from a second copy of Terminal 1 (stop the Node version first, they share port 8000).</p>
+  </div>
+
+  <!-- ============ 05 — Brain Exercise ============ -->
+  <h2><span class="num">05</span>Brain Exercise</h2>
+
+  <div class="brain">
+    <span class="label">Brain Exercise</span>
+    <p>Open two extra terminals. In Terminal A, type (but don't press Enter
+    yet):</p>
+    <pre><code>curl "http://localhost:8000/first"</code></pre>
+    <p>In Terminal B, type (but don't press Enter yet):</p>
+    <pre><code>curl -X POST "http://localhost:8000/second" -d "x=1"</code></pre>
+    <p>Now press Enter in Terminal A, then <em>immediately</em> press Enter
+    in Terminal B, as fast as you can. Which raw request do you expect to
+    see printed first in your server's terminal — <code>/first</code> or
+    <code>/second</code>?</p>
+
+    <div class="answer">
+      <strong>Most people say "/first, obviously — I pressed Enter on it
+      first."</strong> But TCP connection acceptance is decided by your
+      operating system's network stack, not by which terminal you typed
+      into first or even which <code>curl</code> process started first. The
+      OS queues incoming connection attempts and hands them to
+      <code>accept()</code> in the order <em>it</em> received them — which
+      depends on process scheduling, DNS/loopback resolution timing, and
+      OS-level buffering, none of which you control from your keyboard. Run
+      it a few times: you will occasionally see <code>/second</code> printed
+      first, even though you swear you pressed Enter on Terminal A first.
+      This is the exact same reason production servers never assume request
+      <em>order</em> reflects client intent — a lesson that resurfaces hard
+      in Module 09 and 10 (CSRF), where an attacker deliberately exploits
+      the fact that a server can't tell <em>who</em> or <em>in what order</em>
+      requests were meant to arrive.
+    </div>
+  </div>
+
+  <!-- ============ 06 — There Are No Dumb Questions ============ -->
+  <h2><span class="num">06</span>There Are No Dumb Questions</h2>
+
+  <div class="qa">
+    <div class="q">Q: Isn't this exactly what $_GET / req.query already do for me? Why not just start there?</div>
+    <div class="a">A: Because $_GET and req.query are trust decisions someone already made on your behalf — they've decided the query string is UTF-8 text, decided how to split on <code>&amp;</code> and <code>=</code>, decided how to percent-decode it. You're about to spend an entire course reasoning about when those decisions go wrong (that's what XSS is). You can't audit a decision you've never seen made.</div>
+
+    <div class="q">Q: My browser's request looked way longer than curl's when I checked DevTools. Did I do something wrong?</div>
+    <div class="a">A: No — browsers attach a lot more headers by default (Cookie, Accept-Language, Accept-Encoding, Sec-Fetch-*, a much longer User-Agent). Both are still perfectly valid GET requests; curl is just a much more minimal client. The method line and the overall shape (headers, blank line, optional body) are identical.</div>
+
+    <div class="q">Q: If POST "hides" the data from the URL, doesn't that mean POST is more secure?</div>
+    <div class="a">A: This is the single most common misconception in web security, and you just disproved it yourself — you watched the POST body print out in plain text in your own terminal. POST only hides data from the URL bar, browser history, and server access logs. It does nothing for confidentiality on the wire (that's TLS's job) and nothing to stop anyone with your source code, your terminal, or a network capture from reading it. Keep this experiment in mind every time someone claims "we use POST so it's safe."</div>
+
+    <div class="q">Q: This all feels like plumbing. Where does XSS actually come in?</div>
+    <div class="a">A: Right here, structurally. XSS happens when data that arrived in <em>either</em> of the two places you just saw — the URL's query string or the POST body — gets written back into an HTML page without being re-encoded for that context. You cannot spot that bug reliably until you know, precisely, where in the raw request that data lived and how it got from there into your server's memory. Module 02 takes these exact bytes and shows you the parsed version; Module 05 is where you'll break it.</div>
+  </div>
+
+  <!-- ============ 07 — What's Next ============ -->
+  <h2><span class="num">07</span>What's Next</h2>
+
+  <div class="callout teal">
+    <span class="label">What's Next</span>
+    Module 02 — <strong>Superglobals &amp; req Objects</strong> — takes the
+    exact raw bytes you just watched print to your terminal and shows you
+    how PHP's <code>$_GET</code>/<code>$_POST</code> and Node's
+    <code>req.query</code>/<code>req.body</code> are nothing more than
+    parsed views of that same text. Now is the right time for it precisely
+    because you've seen the "before" picture — every parsing decision
+    Module 02 makes will read as a deliberate simplification of something
+    you've already seen with your own eyes, instead of an opaque framework
+    feature you have to take on faith.
+  </div>
+
+</div>
+
+<div class="wrap">
+  <footer>
+    <span class="disabled">&larr; No previous module</span>
+    <a href="../02_superglobals_and_req_objects/tutorial.html">Module 02 — Superglobals &amp; req Objects &rarr;</a>
+  </footer>
+</div>
+
+</body>
+</html>
