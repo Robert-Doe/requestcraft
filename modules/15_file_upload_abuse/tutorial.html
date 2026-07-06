@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Module 15 — File Upload Abuse | xss_mastery</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;900&family=Source+Code+Pro:wght@400;600&family=Lato:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0b0f1a;      --bg2:#111827;    --bg3:#1a2235;
+    --card:#141c2e;    --border:#1e3a5f; --gold:#f5c842;
+    --cyan:#38bdf8;    --teal:#0d9488;   --red:#f87171;
+    --green:#4ade80;   --purple:#a78bfa; --orange:#fb923c;
+    --text:#e2e8f0;    --muted:#7a9bbf;  --code-bg:#060d1a;
+  }
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: 'Lato', sans-serif; line-height: 1.65; margin: 0; padding: 0 0 80px 0; }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 0 28px; }
+  header.hero { background: linear-gradient(180deg, var(--bg2) 0%, var(--bg) 100%); border-bottom: 1px solid var(--border); padding: 48px 0 32px 0; }
+  h1, h2, h3 { font-family: 'Playfair Display', serif; color: var(--text); letter-spacing: 0.01em; }
+  h1 { font-size: 2.3rem; margin: 0 0 8px 0; color: var(--gold); }
+  .kicker { font-family: 'Source Code Pro', monospace; color: var(--cyan); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.12em; }
+  .subtitle { color: var(--muted); font-size: 1.1rem; margin-top: 6px; }
+  h2 { font-size: 1.6rem; margin-top: 56px; padding-bottom: 10px; border-bottom: 2px solid var(--border); color: var(--cyan); }
+  h2 .num { display: inline-block; font-family: 'Source Code Pro', monospace; color: var(--gold); margin-right: 10px; }
+  h3 { color: var(--gold); font-size: 1.15rem; margin-top: 28px; }
+  p { margin: 14px 0; }
+  code, pre, .mono { font-family: 'Source Code Pro', monospace; }
+  pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px; padding: 18px 20px; overflow-x: auto; font-size: 0.87rem; line-height: 1.6; }
+  pre code { background: none; padding: 0; }
+  code { background: var(--bg3); padding: 2px 6px; border-radius: 4px; font-size: 0.88em; }
+  .cm { color: var(--muted); font-style: italic; } .kw { color: var(--purple); } .str { color: var(--green); } .fn { color: var(--cyan); }
+  .prereq-bar { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 22px 0; }
+  .prereq-tag { display: inline-block; background: var(--bg3); border: 1px solid var(--border); color: var(--cyan); text-decoration: none; padding: 6px 14px; border-radius: 20px; font-family: 'Source Code Pro', monospace; font-size: 0.82rem; }
+  .callout { border-left: 4px solid var(--gold); background: var(--card); padding: 18px 22px; border-radius: 6px; margin: 20px 0; }
+  .callout .label { font-family: 'Source Code Pro', monospace; text-transform: uppercase; font-size: 0.72rem; letter-spacing: 0.1em; color: var(--gold); display: block; margin-bottom: 8px; }
+  .callout.gold { border-left-color: var(--gold); } .callout.gold .label { color: var(--gold); }
+  .callout.teal { border-left-color: var(--teal); } .callout.teal .label { color: var(--teal); }
+  .callout.red { border-left-color: var(--red); } .callout.red .label { color: var(--red); }
+  .callout.green { border-left-color: var(--green); } .callout.green .label { color: var(--green); }
+  table.sst { width: 100%; border-collapse: collapse; margin: 18px 0; font-size: 0.88rem; }
+  table.sst th { text-align: left; color: var(--gold); font-family: 'Source Code Pro', monospace; font-size: 0.72rem; text-transform: uppercase; border-bottom: 2px solid var(--border); padding: 8px 10px; }
+  table.sst td { padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .win-box { background: var(--code-bg); border: 1px solid var(--teal); border-radius: 8px; padding: 4px 22px 18px 22px; margin: 18px 0; }
+  .win-box .title { font-family: 'Source Code Pro', monospace; color: var(--teal); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; padding-top: 14px; }
+  .win-box pre { border: none; background: none; padding: 10px 0; margin: 0; }
+  .brain { background: var(--card); border: 2px dashed var(--purple); border-radius: 8px; padding: 20px 24px; margin: 20px 0; }
+  .brain .label { font-family: 'Source Code Pro', monospace; color: var(--purple); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.1em; }
+  .brain .answer { color: var(--muted); margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+  .qa { margin: 20px 0; } .qa .q { color: var(--gold); font-weight: 700; margin-top: 18px; } .qa .a { color: var(--text); margin-top: 6px; }
+  footer { margin-top: 70px; padding-top: 24px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; font-family: 'Source Code Pro', monospace; font-size: 0.88rem; }
+  footer a { color: var(--cyan); text-decoration: none; } footer .disabled { color: var(--muted); }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="kicker">xss_mastery &middot; Module 15</div>
+    <h1>File Upload Abuse</h1>
+    <div class="subtitle">A file that lies about what it is, and a server that believed it.</div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <h2><span class="num">00</span>Before You Start</h2>
+  <p><strong>Direct prerequisites for this module:</strong></p>
+  <div class="prereq-bar">
+    <a class="prereq-tag" href="../14_input_validation_as_defense_in_depth/tutorial.html">Module 14 — Input Validation as Defense-in-Depth</a>
+  </div>
+  <div class="callout gold">
+    <span class="label">Before You Start</span>
+    You need Module 14's allowlist-vs-blocklist distinction solid — this
+    module applies the identical principle to file uploads: never trust
+    a label (filename, Content-Type) when you can check the actual thing
+    (file bytes) instead.
+  </div>
+
+  <h2><span class="num">01</span>The Big Analogy</h2>
+  <div class="callout gold">
+    <span class="label">Head First Moment</span>
+    <p>Imagine a delivery arrives at the restaurant labeled "FRESH
+    PRODUCE" in the sender's own handwriting, on a box the sender packed
+    themselves. A careless receiving clerk checks the label, sees
+    "produce," and wheels it straight into the walk-in without opening
+    it. A careful clerk opens every box and looks at what's actually
+    inside, regardless of what the label claims — because the label was
+    written by whoever sent the box, and they had every reason in the
+    world to write whatever gets it past the door.</p>
+    <p>A file's claimed extension and its claimed Content-Type are both
+    exactly that label — written entirely by whoever is uploading the
+    file. Only the file's actual bytes are the box's real contents.</p>
+  </div>
+
+  <h2><span class="num">02</span>The Attack, Verified</h2>
+  <table class="sst">
+    <tr><th>Step</th><th>Command</th><th>Verified result</th></tr>
+    <tr><td>1</td><td>Create a file <code>evil.php</code> containing <code>&lt;?php echo 'hacked'; ?&gt;</code></td><td>—</td></tr>
+    <tr><td>2</td><td><code>curl -F "avatar=@evil.php;type=image/png;filename=evil.php" /upload-vulnerable</code></td><td><code>Saved as evil.php (trusted claimed extension + Content-Type: image/png)</code></td></tr>
+    <tr><td>3</td><td>Check the uploads folder</td><td>The real PHP file, extension intact, sitting exactly where it was saved</td></tr>
+    <tr><td>4</td><td>Same exact upload, against <code>/upload-fixed</code></td><td><code>415 Unsupported Media Type</code> — rejected outright</td></tr>
+  </table>
+
+  <p>The vulnerable route's entire mistake:</p>
+  <pre><code><span class="cm">// THE VULNERABILITY: trusts the claimed name AND claimed type completely</span>
+<span class="kw">const</span> safeName = baseName(avatar.filename); <span class="cm">// only strips path separators -- NOT a content check</span>
+fs.writeFileSync(path.join(VULN_DIR, safeName), avatar.data);</code></pre>
+
+  <p>The fix checks what the file actually IS, byte for byte:</p>
+  <pre><code><span class="kw">const</span> MAGIC_BYTES = [
+  { ext: <span class="str">'png'</span>, sig: Buffer.from([0x89, 0x50, 0x4e, 0x47]) }, <span class="cm">// real PNGs start with these exact bytes -- always</span>
+  { ext: <span class="str">'jpg'</span>, sig: Buffer.from([0xff, 0xd8, 0xff]) },
+];
+
+<span class="kw">function</span> <span class="fn">detectRealImageType</span>(data) {
+  <span class="kw">for</span> (<span class="kw">const</span> { ext, sig } <span class="kw">of</span> MAGIC_BYTES) {
+    <span class="kw">if</span> (data.subarray(0, sig.length).equals(sig)) <span class="kw">return</span> ext; <span class="cm">// checks the DATA, not the label</span>
+  }
+  <span class="kw">return</span> <span class="kw">null</span>; <span class="cm">// not a recognized image, no matter what it claims to be</span>
+}</code></pre>
+
+  <div class="callout green">
+    <span class="label">Verified</span>
+    The exact same spoofed file (PHP content, claiming to be a PNG) was
+    tested against both routes. The vulnerable route saved it, extension
+    intact, with its full PHP source readable on disk. The fixed route
+    rejected it with <code>415</code>. A genuinely valid PNG (real magic
+    bytes) was then tested against the fixed route and was accepted,
+    saved under a random server-generated name.
+  </div>
+
+  <div class="callout red">
+    <span class="label">Why this matters</span>
+    Nothing about the HTTP request told the server the truth — the
+    <code>Content-Type</code> field of a file part is just text the
+    uploader typed, exactly like the filename. Believing either one is
+    exactly the blocklist mistake from Module 14, applied to a new kind
+    of field: trusting a claim instead of checking the thing itself.
+  </div>
+
+  <h2><span class="num">03</span>Run It on Windows 11</h2>
+  <div class="win-box">
+    <div class="title">Terminal</div>
+    <pre><code>cd xss_mastery\modules\15_file_upload_abuse
+.\run.ps1 -Target run-node</code></pre>
+    <div class="title">Create a fake "image"</div>
+    <pre><code>"&lt;?php echo 'hacked'; ?&gt;" | Out-File -Encoding ascii evil.php</code></pre>
+    <div class="title">Upload it, claiming it's a PNG</div>
+    <pre><code>curl -F "avatar=@evil.php;type=image/png;filename=evil.php" http://localhost:8000/upload-vulnerable
+curl -F "avatar=@evil.php;type=image/png;filename=evil.php" http://localhost:8000/upload-fixed</code></pre>
+    <div class="title">Expected output</div>
+    <pre><code>vulnerable: Saved as evil.php (trusted claimed extension + Content-Type: image/png)
+fixed:      415 Unsupported Media Type -- file content is not a recognized image format</code></pre>
+    <div class="title">Check what actually got saved</div>
+    <pre><code>Get-ChildItem node\uploads-vulnerable
+Get-ChildItem node\uploads-fixed   <span class="cm"># empty -- nothing was ever accepted</span></code></pre>
+    <div class="title">Clean up between runs</div>
+    <pre><code>.\run.ps1 -Target clean</code></pre>
+    <div class="title">If you have PHP installed</div>
+    <pre><code>.\run.ps1 -Target run-php</code></pre>
+  </div>
+
+  <h2><span class="num">04</span>Brain Exercise</h2>
+  <div class="brain">
+    <span class="label">Brain Exercise</span>
+    <p>A teammate proposes: "Let's fix the vulnerable route by rejecting
+    any upload whose filename ends in <code>.php</code>, <code>.php5</code>,
+    <code>.phtml</code>, or <code>.phar</code>." Where does this run into
+    the exact same problem Module 14 already demonstrated?</p>
+    <div class="answer">
+      <strong>It's a blocklist over file extensions — the exact same
+      shape of mistake as Module 14's <code>/blocklist</code> route,
+      just applied to a different field.</strong> It requires
+      enumerating every dangerous extension in advance, on every
+      server configuration you might ever deploy to. Depending on the
+      hosting environment, executable-treated extensions can include
+      far more than the obvious ones: <code>.pl</code>, <code>.cgi</code>,
+      <code>.asp</code>, <code>.aspx</code>, <code>.jsp</code>,
+      <code>.htaccess</code> (which isn't even a script but can
+      reconfigure how a whole directory is served), and
+      server-specific variants like <code>.phtml3</code> that a
+      misconfigured Apache might still execute. A blocklist has to win
+      every time; an attacker only has to find ONE extension the list
+      forgot. The magic-byte allowlist this module actually implements
+      doesn't care what extension is claimed at all — it only accepts
+      content that's structurally a real image, which no amount of
+      extension renaming changes.
+    </div>
+  </div>
+
+  <h2><span class="num">05</span>There Are No Dumb Questions</h2>
+  <div class="qa">
+    <div class="q">Q: Does checking magic bytes mean the file is 100% safe to serve?</div>
+    <div class="a">A: It means the file is genuinely a well-formed image CONTAINER — it does not mean the image is free of exploits targeting bugs in whatever library later decodes it (real vulnerabilities have existed in image-parsing libraries triggered by maliciously crafted, but format-valid, image files). Magic-byte checking closes the specific door this module demonstrates (arbitrary file type disguised as an image); it is one layer, not a complete guarantee.</div>
+
+    <div class="q">Q: Why generate a random filename instead of just keeping the original name but forcing the correct extension?</div>
+    <div class="a">A: Because the original filename itself is still attacker-controlled text, and "just fix the extension" leaves every other character an attacker chose sitting in your filesystem path — a needless source of encoding, length, or special-character bugs in whatever code later reads that filename. Discarding it entirely and generating a fresh name removes that entire surface, at the minor cost of needing a separate, safely-encoded field if you want to show the user their original filename later.</div>
+
+    <div class="q">Q: Should uploaded files ever be stored in a location a web server would execute?</div>
+    <div class="a">A: No — a defense-in-depth best practice this module didn't need to implement to make its point: store uploads outside the web root entirely, or in a directory explicitly configured to never execute scripts regardless of extension. That way, even a file that somehow evaded content validation still can't run as code, because the serving configuration refuses to execute anything in that location at all.</div>
+  </div>
+
+  <h2><span class="num">06</span>What's Next</h2>
+  <div class="callout teal">
+    <span class="label">What's Next</span>
+    Module 16 — <strong>Testing Methodology & Payload Craft</strong> —
+    takes every technique from Modules 05 through 15 and turns them into
+    a repeatable process: how to hand-craft requests with curl, build a
+    personal payload catalog, and tell "my filter blocked the one payload
+    I tried" apart from "this is actually sanitized." Now is the right
+    time because you've built and broken enough real vulnerabilities to
+    recognize the PATTERNS worth testing for systematically, rather than
+    one demo at a time.
+  </div>
+
+</div>
+
+<div class="wrap">
+  <footer>
+    <a href="../14_input_validation_as_defense_in_depth/tutorial.html">&larr; Module 14 — Input Validation as Defense-in-Depth</a>
+    <a href="../16_testing_methodology_and_payload_craft/tutorial.html">Module 16 — Testing Methodology &amp; Payload Craft &rarr;</a>
+  </footer>
+</div>
+
+</body>
+</html>
