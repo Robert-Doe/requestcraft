@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Module 09 — CSRF via GET | xss_mastery</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;900&family=Source+Code+Pro:wght@400;600&family=Lato:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0b0f1a;      --bg2:#111827;    --bg3:#1a2235;
+    --card:#141c2e;    --border:#1e3a5f; --gold:#f5c842;
+    --cyan:#38bdf8;    --teal:#0d9488;   --red:#f87171;
+    --green:#4ade80;   --purple:#a78bfa; --orange:#fb923c;
+    --text:#e2e8f0;    --muted:#7a9bbf;  --code-bg:#060d1a;
+  }
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: 'Lato', sans-serif; line-height: 1.65; margin: 0; padding: 0 0 80px 0; }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 0 28px; }
+  header.hero { background: linear-gradient(180deg, var(--bg2) 0%, var(--bg) 100%); border-bottom: 1px solid var(--border); padding: 48px 0 32px 0; }
+  h1, h2, h3 { font-family: 'Playfair Display', serif; color: var(--text); letter-spacing: 0.01em; }
+  h1 { font-size: 2.3rem; margin: 0 0 8px 0; color: var(--gold); }
+  .kicker { font-family: 'Source Code Pro', monospace; color: var(--cyan); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.12em; }
+  .subtitle { color: var(--muted); font-size: 1.1rem; margin-top: 6px; }
+  h2 { font-size: 1.6rem; margin-top: 56px; padding-bottom: 10px; border-bottom: 2px solid var(--border); color: var(--cyan); }
+  h2 .num { display: inline-block; font-family: 'Source Code Pro', monospace; color: var(--gold); margin-right: 10px; }
+  h3 { color: var(--gold); font-size: 1.15rem; margin-top: 28px; }
+  p { margin: 14px 0; }
+  code, pre, .mono { font-family: 'Source Code Pro', monospace; }
+  pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px; padding: 18px 20px; overflow-x: auto; font-size: 0.87rem; line-height: 1.6; }
+  pre code { background: none; padding: 0; }
+  code { background: var(--bg3); padding: 2px 6px; border-radius: 4px; font-size: 0.88em; }
+  .cm { color: var(--muted); font-style: italic; } .kw { color: var(--purple); } .str { color: var(--green); } .fn { color: var(--cyan); }
+  .prereq-bar { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 22px 0; }
+  .prereq-tag { display: inline-block; background: var(--bg3); border: 1px solid var(--border); color: var(--cyan); text-decoration: none; padding: 6px 14px; border-radius: 20px; font-family: 'Source Code Pro', monospace; font-size: 0.82rem; }
+  .callout { border-left: 4px solid var(--gold); background: var(--card); padding: 18px 22px; border-radius: 6px; margin: 20px 0; }
+  .callout .label { font-family: 'Source Code Pro', monospace; text-transform: uppercase; font-size: 0.72rem; letter-spacing: 0.1em; color: var(--gold); display: block; margin-bottom: 8px; }
+  .callout.gold { border-left-color: var(--gold); } .callout.gold .label { color: var(--gold); }
+  .callout.teal { border-left-color: var(--teal); } .callout.teal .label { color: var(--teal); }
+  .callout.red { border-left-color: var(--red); } .callout.red .label { color: var(--red); }
+  .diagram { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 18px 0; }
+  .diagram .cell { background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+  .diagram .cell h4 { margin: 0 0 8px 0; font-family: 'Playfair Display', serif; font-size: 1.05rem; }
+  .diagram .get h4 { color: var(--cyan); } .diagram .post h4 { color: var(--red); }
+  .diagram .cell p { margin: 4px 0; font-size: 0.93rem; color: var(--muted); }
+  .win-box { background: var(--code-bg); border: 1px solid var(--teal); border-radius: 8px; padding: 4px 22px 18px 22px; margin: 18px 0; }
+  .win-box .title { font-family: 'Source Code Pro', monospace; color: var(--teal); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; padding-top: 14px; }
+  .win-box pre { border: none; background: none; padding: 10px 0; margin: 0; }
+  .brain { background: var(--card); border: 2px dashed var(--purple); border-radius: 8px; padding: 20px 24px; margin: 20px 0; }
+  .brain .label { font-family: 'Source Code Pro', monospace; color: var(--purple); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.1em; }
+  .brain .answer { color: var(--muted); margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+  .qa { margin: 20px 0; } .qa .q { color: var(--gold); font-weight: 700; margin-top: 18px; } .qa .a { color: var(--text); margin-top: 6px; }
+  footer { margin-top: 70px; padding-top: 24px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; font-family: 'Source Code Pro', monospace; font-size: 0.88rem; }
+  footer a { color: var(--cyan); text-decoration: none; } footer .disabled { color: var(--muted); }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="kicker">xss_mastery &middot; Module 09</div>
+    <h1>CSRF via GET</h1>
+    <div class="subtitle">Your browser will happily spend your money for a stranger. It just needs an image tag to ask.</div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <h2><span class="num">00</span>Before You Start</h2>
+  <p><strong>Direct prerequisites for this module:</strong></p>
+  <div class="prereq-bar">
+    <a class="prereq-tag" href="../04_idempotency_and_safety/tutorial.html">Module 04 — Idempotency & Safety</a>
+  </div>
+  <div class="callout gold">
+    <span class="label">Before You Start</span>
+    This module is a turn, not a continuation — Modules 05 through 08 were
+    all XSS (a broken TRUST boundary inside one page). CSRF is a different
+    bug class: no injected script is needed at all. You need Module 04's
+    hidden-<code>&lt;img&gt;</code> technique solid, because this module
+    reuses it verbatim, aimed at a completely different site.
+  </div>
+
+  <h2><span class="num">01</span>The Big Analogy</h2>
+  <div class="callout gold">
+    <span class="label">Head First Moment</span>
+    <p>Imagine you're a regular at your bank's restaurant-themed loyalty
+    program — you're recognized by your loyalty card, which stays in your
+    wallet at all times. Now imagine a completely unrelated restaurant
+    across town has this policy: "anyone holding ANY loyalty card from
+    ANY restaurant chain can charge food to whatever account that card
+    belongs to." You'd never do that on purpose. But if your wallet is
+    just sitting there and the card is scanned automatically the instant
+    you walk in the door — without you presenting it, without you being
+    asked — you've just paid for a stranger's dinner without ever knowing
+    it happened.</p>
+    <p>Your bank session cookie is that loyalty card. Browsers attach
+    cookies to a request based on which SITE the request is going TO —
+    not which page you were looking at when the request fired. A
+    completely unrelated website can make your browser send a request to
+    your bank, cookie and all, without your bank ever finding out the
+    request didn't come from you on purpose.</p>
+  </div>
+
+  <div class="diagram">
+    <div class="cell get">
+      <h4>You, logged into the bank</h4>
+      <p>Visit <code>localhost:8000/</code>. You get a session cookie.
+      Balance: $1000. All normal so far.</p>
+    </div>
+    <div class="cell post">
+      <h4>You, browsing an unrelated site</h4>
+      <p>Visit <code>localhost:8001/</code> — "free cat pictures." A hidden
+      image silently fires a request back to the bank. Balance: $900.</p>
+    </div>
+  </div>
+
+  <h2><span class="num">02</span>The Attacker's Entire Payload</h2>
+  <p>Here is the complete attack, in one line of HTML, from
+  <code>node/attacker/server.js</code>:</p>
+
+  <pre><code>&lt;img src=<span class="str">"http://localhost:8000/transfer?to=attacker&amp;amount=100"</span> style=<span class="str">"display:none"</span> alt=<span class="str">""</span>&gt;</code></pre>
+
+  <p>Nothing else on the attacker's page matters. The moment your browser
+  loads this page — any page, anywhere, that contains this one tag — it
+  fires a real GET request to <code>localhost:8000</code>. Compare that to
+  the bank's vulnerable route:</p>
+
+  <pre><code><span class="kw">if</span> (path === <span class="str">'/transfer'</span> && req.method === <span class="str">'GET'</span>) {
+  <span class="cm">// THE VULNERABILITY: authenticated ONLY by whatever cookie arrived --</span>
+  <span class="cm">// no check on WHERE the request came from, no proof of user intent</span>
+  balances[session] -= amount;
+  balances[to] += amount;
+}</code></pre>
+
+  <div class="callout red">
+    <span class="label">Why this matters</span>
+    Notice what's completely absent from the bank's code: any check of the
+    <code>Referer</code> or <code>Origin</code> header, any CSRF token, any
+    confirmation step. The ONLY thing standing between "you" and "an
+    attacker moving your money" is a cookie — and cookies don't know or
+    care which page asked for them to be sent.
+  </div>
+
+  <h2><span class="num">03</span>Run It on Windows 11</h2>
+  <div class="win-box">
+    <div class="title">Terminal 1 — the bank</div>
+    <pre><code>cd xss_mastery\modules\09_csrf_via_get
+.\run.ps1 -Target run-bank-node</code></pre>
+    <div class="title">Terminal 2 — the attacker site</div>
+    <pre><code>.\run.ps1 -Target run-attacker-node</code></pre>
+    <div class="title">Step 1</div>
+    <pre><code>Open http://localhost:8000/ -- note your balance: $1000</code></pre>
+    <div class="title">Step 2 — in the SAME browser, a new tab</div>
+    <pre><code>Open http://localhost:8001/ -- just look at the "cat pictures." Do nothing else.</code></pre>
+    <div class="title">Step 3 — go back to the first tab</div>
+    <pre><code>Reload http://localhost:8000/balance</code></pre>
+    <div class="title">Expected result</div>
+    <pre><code>Balance for victim: $900
+
+You never clicked anything on the bank site. Visiting an unrelated page
+was enough.</code></pre>
+    <div class="title">If you have PHP installed</div>
+    <pre><code>.\run.ps1 -Target run-bank-php   (in one terminal)
+.\run.ps1 -Target run-attacker-php   (in another)</code></pre>
+  </div>
+
+  <h2><span class="num">04</span>Brain Exercise</h2>
+  <div class="brain">
+    <span class="label">Brain Exercise</span>
+    <p>A teammate says: "This can't be a real attack — the attacker's page
+    is on port 8001 and the bank is on port 8000. Those are different
+    origins, and the Same-Origin Policy stops cross-origin access. This is
+    fake." Where's the flaw?</p>
+    <div class="answer">
+      <strong>The Same-Origin Policy stops the ATTACKER'S PAGE from
+      reading the bank's RESPONSE. It does nothing to stop the browser
+      from SENDING the request in the first place, cookies included.</strong>
+      This is the single most important distinction in this entire module.
+      An `<img>`, `<script src>`, `<link>`, or plain form submission from
+      one origin to another is explicitly ALLOWED to fire by design — the
+      web depends on cross-origin resource loading working (that's how
+      every CDN-hosted image, font, and script on the internet loads at
+      all). What the Same-Origin Policy blocks is the ATTACKER'S
+      JAVASCRIPT reading back the bank's response content (the actual
+      balance number, the account details). But CSRF doesn't need to read
+      the response — the money already moved the instant the request was
+      sent, response or no response. The attacker doesn't need to see the
+      result to have already caused it.
+    </div>
+  </div>
+
+  <h2><span class="num">05</span>There Are No Dumb Questions</h2>
+  <div class="qa">
+    <div class="q">Q: Would this attack work if the bank used HTTPS instead of plain HTTP?</div>
+    <div class="a">A: Yes, completely unchanged. TLS protects data in transit from eavesdroppers; it has zero bearing on which requests a browser is willing to send, or which cookies it attaches to them. This is not a transport-layer bug.</div>
+
+    <div class="q">Q: Couldn't the bank just check if the request has a valid session cookie, like it already does?</div>
+    <div class="a">A: That check is exactly what's failing here — the attacker's request DOES have a valid session cookie, because the browser attached the REAL victim's real cookie automatically. "Has a valid session" answers "is someone logged in," not "did that specific someone mean to do this specific thing right now." Module 10 introduces the actual missing check: a CSRF token, a value the bank hands out that only pages the bank itself served would know to include.</div>
+
+    <div class="q">Q: If GET is the problem, does switching this to POST fix it?</div>
+    <div class="a">A: It raises the bar, but doesn't fully fix it — a POST can still be forged with an auto-submitting `<form>` on the attacker's page (no image tag needed, just JavaScript that submits a hidden form the instant the page loads). Module 10 covers exactly this: why moving to POST alone isn't sufficient, and what actually is (a CSRF token plus the `SameSite` cookie attribute).</div>
+  </div>
+
+  <h2><span class="num">06</span>What's Next</h2>
+  <div class="callout teal">
+    <span class="label">What's Next</span>
+    Module 10 — <strong>CSRF via POST</strong> — shows the "obvious fix"
+    (just use POST) actually being defeated by an auto-submitting form, and
+    then introduces the real fix: CSRF tokens combined with the
+    <code>SameSite</code> cookie attribute. Now is the right time because
+    you've just seen the GET-specific version fully succeed — Module 10
+    shows why POST alone doesn't save you, before finally showing you what does.
+  </div>
+
+</div>
+
+<div class="wrap">
+  <footer>
+    <a href="../08_dom_based_xss/tutorial.html">&larr; Module 08 — DOM-Based XSS</a>
+    <a href="../10_csrf_via_post/tutorial.html">Module 10 — CSRF via POST &rarr;</a>
+  </footer>
+</div>
+
+</body>
+</html>
