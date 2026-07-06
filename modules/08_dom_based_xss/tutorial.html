@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Module 08 — DOM-Based XSS | xss_mastery</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;900&family=Source+Code+Pro:wght@400;600&family=Lato:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0b0f1a;      --bg2:#111827;    --bg3:#1a2235;
+    --card:#141c2e;    --border:#1e3a5f; --gold:#f5c842;
+    --cyan:#38bdf8;    --teal:#0d9488;   --red:#f87171;
+    --green:#4ade80;   --purple:#a78bfa; --orange:#fb923c;
+    --text:#e2e8f0;    --muted:#7a9bbf;  --code-bg:#060d1a;
+  }
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: 'Lato', sans-serif; line-height: 1.65; margin: 0; padding: 0 0 80px 0; }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 0 28px; }
+  header.hero { background: linear-gradient(180deg, var(--bg2) 0%, var(--bg) 100%); border-bottom: 1px solid var(--border); padding: 48px 0 32px 0; }
+  h1, h2, h3 { font-family: 'Playfair Display', serif; color: var(--text); letter-spacing: 0.01em; }
+  h1 { font-size: 2.3rem; margin: 0 0 8px 0; color: var(--gold); }
+  .kicker { font-family: 'Source Code Pro', monospace; color: var(--cyan); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.12em; }
+  .subtitle { color: var(--muted); font-size: 1.1rem; margin-top: 6px; }
+  h2 { font-size: 1.6rem; margin-top: 56px; padding-bottom: 10px; border-bottom: 2px solid var(--border); color: var(--cyan); }
+  h2 .num { display: inline-block; font-family: 'Source Code Pro', monospace; color: var(--gold); margin-right: 10px; }
+  h3 { color: var(--gold); font-size: 1.15rem; margin-top: 28px; }
+  p { margin: 14px 0; }
+  code, pre, .mono { font-family: 'Source Code Pro', monospace; }
+  pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px; padding: 18px 20px; overflow-x: auto; font-size: 0.87rem; line-height: 1.6; }
+  pre code { background: none; padding: 0; }
+  code { background: var(--bg3); padding: 2px 6px; border-radius: 4px; font-size: 0.88em; }
+  .cm { color: var(--muted); font-style: italic; } .kw { color: var(--purple); } .str { color: var(--green); } .fn { color: var(--cyan); }
+  .prereq-bar { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 22px 0; }
+  .prereq-tag { display: inline-block; background: var(--bg3); border: 1px solid var(--border); color: var(--cyan); text-decoration: none; padding: 6px 14px; border-radius: 20px; font-family: 'Source Code Pro', monospace; font-size: 0.82rem; }
+  .callout { border-left: 4px solid var(--gold); background: var(--card); padding: 18px 22px; border-radius: 6px; margin: 20px 0; }
+  .callout .label { font-family: 'Source Code Pro', monospace; text-transform: uppercase; font-size: 0.72rem; letter-spacing: 0.1em; color: var(--gold); display: block; margin-bottom: 8px; }
+  .callout.gold { border-left-color: var(--gold); } .callout.gold .label { color: var(--gold); }
+  .callout.teal { border-left-color: var(--teal); } .callout.teal .label { color: var(--teal); }
+  .callout.red { border-left-color: var(--red); } .callout.red .label { color: var(--red); }
+  .diagram { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 18px 0; }
+  .diagram .cell { background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+  .diagram .cell h4 { margin: 0 0 8px 0; font-family: 'Playfair Display', serif; font-size: 1.05rem; }
+  .diagram .get h4 { color: var(--cyan); } .diagram .post h4 { color: var(--orange); }
+  .diagram .cell p { margin: 4px 0; font-size: 0.93rem; color: var(--muted); }
+  .win-box { background: var(--code-bg); border: 1px solid var(--teal); border-radius: 8px; padding: 4px 22px 18px 22px; margin: 18px 0; }
+  .win-box .title { font-family: 'Source Code Pro', monospace; color: var(--teal); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; padding-top: 14px; }
+  .win-box pre { border: none; background: none; padding: 10px 0; margin: 0; }
+  .brain { background: var(--card); border: 2px dashed var(--purple); border-radius: 8px; padding: 20px 24px; margin: 20px 0; }
+  .brain .label { font-family: 'Source Code Pro', monospace; color: var(--purple); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.1em; }
+  .brain .answer { color: var(--muted); margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+  .qa { margin: 20px 0; } .qa .q { color: var(--gold); font-weight: 700; margin-top: 18px; } .qa .a { color: var(--text); margin-top: 6px; }
+  footer { margin-top: 70px; padding-top: 24px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; font-family: 'Source Code Pro', monospace; font-size: 0.88rem; }
+  footer a { color: var(--cyan); text-decoration: none; } footer .disabled { color: var(--muted); }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="kicker">xss_mastery &middot; Module 08</div>
+    <h1>DOM-Based XSS</h1>
+    <div class="subtitle">The server is innocent this time. The entire bug lives in the browser.</div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <h2><span class="num">00</span>Before You Start</h2>
+  <p><strong>Direct prerequisites for this module:</strong></p>
+  <div class="prereq-bar">
+    <a class="prereq-tag" href="../07_stored_xss_via_post/tutorial.html">Module 07 — Stored XSS via POST</a>
+  </div>
+  <div class="callout gold">
+    <span class="label">Before You Start</span>
+    You need Module 06's sink vocabulary solid — recognize
+    <code>.innerHTML</code> as dangerous, <code>.textContent</code> as
+    not, on sight. This module's twist isn't a new sink; it's a source
+    that never goes near a server.
+  </div>
+
+  <h2><span class="num">01</span>The Big Analogy</h2>
+  <div class="callout gold">
+    <span class="label">Head First Moment</span>
+    <p>Every attack so far involved the kitchen somehow — a ticket
+    reaching it (POST), an announcement being read from something the
+    front door heard (GET). Module 08 is different: imagine a customer
+    scrawling a note directly on a table's own little order-status
+    display — a screen sitting right there at the table that just shows
+    "your order status," which the CUSTOMER'S OWN PHONE updates locally
+    without ever contacting the kitchen. If the display blindly shows
+    whatever text is typed into it, a customer can make their own table's
+    screen say anything they want — and the kitchen never finds out,
+    because the kitchen was never involved in the first place.</p>
+    <p>That local display is your browser's DOM. <code>location.hash</code>
+    is the note the customer wrote. Nothing about this interaction ever
+    reaches "the kitchen" (your server) — the entire vulnerable
+    read-and-render cycle happens on one device, in one browser tab.</p>
+  </div>
+
+  <h2><span class="num">02</span>The Vulnerable Script, Line by Line</h2>
+  <pre><code><span class="kw">function</span> <span class="fn">updateGreeting</span>() {
+  <span class="kw">var</span> name = location.hash.substring(1);       <span class="cm">// everything after '#' -- NEVER sent to any server, ever</span>
+  <span class="kw">var</span> decoded = decodeURIComponent(name);     <span class="cm">// readability only -- does NOT make this safe (see DECISIONS.md #4)</span>
+  document.getElementById(<span class="str">'greeting'</span>).innerHTML =
+    <span class="str">'Hello, '</span> + decoded + <span class="str">'!'</span>;       <span class="cm">// THIS is the sink -- same kind of bug as Modules 05 and 07</span>
+}
+window.addEventListener(<span class="str">'hashchange'</span>, updateGreeting); <span class="cm">// re-runs on every in-page hash change, no reload needed</span>
+updateGreeting();                                     <span class="cm">// also runs once immediately for whatever hash was present on load</span></code></pre>
+
+  <div class="callout teal">
+    <span class="label">Why this matters</span>
+    <code>location.hash</code> exists specifically so a page can react to
+    changes without asking the server for anything — that's WHY single-page
+    apps use it for client-side routing. The same property that makes it
+    efficient (no round-trip) is exactly what makes this bug invisible to
+    any tool that only inspects server-side code or network traffic for
+    the payload itself.
+  </div>
+
+  <h2><span class="num">03</span>Run It on Windows 11</h2>
+  <div class="win-box">
+    <div class="title">Terminal</div>
+    <pre><code>cd xss_mastery\modules\08_dom_based_xss
+.\run.ps1 -Target run-node</code></pre>
+    <div class="title">Step 1 — normal use</div>
+    <pre><code>Open http://localhost:8000/#Bob
+Page greets you: "Hello, Bob!"</code></pre>
+    <div class="title">Step 2 — the attack</div>
+    <pre><code>Open your browser DevTools Network tab first, then open:
+
+http://localhost:8000/#%3Cimg%20src%3Dx%20onerror%3D%22alert(document.cookie)%22%3E</code></pre>
+    <div class="title">Expected result</div>
+    <pre><code>An alert() pops up immediately -- your JavaScript ran, sourced entirely
+from the URL fragment. Now check the Network tab: the ONLY request that
+carries any information to the server is the very first page load,
+before the '#' -- everything after '#' never appears in ANY request.</code></pre>
+    <p style="color:var(--muted); font-size:0.88rem;">Note: because this specific payload uses <code>&lt;img src=x onerror=...&gt;</code>, you'll actually see ONE extra request in the Network tab: <code>GET /x</code>, returning 404. That's the browser trying (and failing) to load the broken image "x" -- it's what triggers <code>onerror</code>. Look closely: that request carries none of the payload. It's an artifact of this payload's trigger mechanism, not a leak of your attack string.</p>
+    <div class="title">If you have PHP installed</div>
+    <pre><code>.\run.ps1 -Target run-php</code></pre>
+  </div>
+
+  <h2><span class="num">04</span>Brain Exercise</h2>
+  <div class="brain">
+    <span class="label">Brain Exercise</span>
+    <p>You just read, in the box above, that triggering this exact payload
+    causes one extra network request (<code>GET /x</code> → 404) even
+    though the module's whole premise is "zero server round-trip." Does
+    that extra request mean the module's core claim is wrong?</p>
+    <div class="answer">
+      <strong>No — and the distinction is exactly the point.</strong> The
+      claim was never "this payload causes literally zero network
+      activity, no matter what." The claim is specifically about the
+      SOURCE: <code>location.hash</code> itself is never transmitted in
+      any HTTP request, under any circumstances — that's a structural
+      property of URL fragments, guaranteed by the URL specification, not
+      an accident of this one payload. The <code>GET /x</code> request
+      you saw is a side effect of THIS payload's chosen trigger mechanism
+      (a deliberately broken image, used only to fire <code>onerror</code>)
+      — inspect that request and you'll find it carries zero trace of your
+      actual attack string. A different payload — one that doesn't need to
+      reference any external resource to execute — would produce no extra
+      request at all, while still being exactly as dangerous. The lesson:
+      verify precisely what a claim is about before either believing it or
+      debunking it. "The hash isn't sent to the server" and "this specific
+      proof-of-concept causes zero network activity of any kind" are two
+      different claims, and only the first one is what this module actually asserts.
+    </div>
+  </div>
+
+  <h2><span class="num">05</span>There Are No Dumb Questions</h2>
+  <div class="qa">
+    <div class="q">Q: If the server never sees this, can server-side logging or a WAF (web application firewall) ever catch this attack?</div>
+    <div class="a">A: No, structurally — a WAF inspects requests as they arrive at (or in front of) your server, and this payload is never part of any request. This is one of the clearest illustrations of why server-side defenses alone are never a complete XSS strategy — Module 12's Content-Security-Policy is a defense that DOES work here, because it's enforced by the browser itself, on the page, regardless of where the dangerous value came from.</div>
+
+    <div class="q">Q: Does this mean query strings (?q=) are safe from DOM-based XSS since they're at least visible to the server?</div>
+    <div class="a">A: Not at all — `location.search` (which reads the query string) is just as available to client-side JavaScript as `location.hash` is. The server SEEING a value doesn't stop client-side code from ALSO reading that same value out of the URL and mishandling it in the exact same way this module demonstrates. "Visible to the server" and "safe" are unrelated properties.</div>
+
+    <div class="q">Q: Is DOM-based XSS newer or rarer than reflected/stored XSS?</div>
+    <div class="a">A: It's not newer, but it's become far more common as applications shifted more logic into client-side JavaScript (single-page apps, client-side routers, heavy DOM manipulation). Every framework that manipulates the DOM based on URL state — which is most modern JavaScript frameworks — has this exact category of risk somewhere in its routing layer if a developer bypasses the framework's built-in escaping.</div>
+  </div>
+
+  <h2><span class="num">06</span>What's Next</h2>
+  <div class="callout teal">
+    <span class="label">What's Next</span>
+    Module 09 — <strong>CSRF via GET</strong> — shifts away from XSS
+    entirely and returns to a theme from Module 04: what happens when a
+    GET request that DOES reach your server is used to trigger an action
+    the victim never intended, using nothing but an <code>&lt;img&gt;</code>
+    tag on a completely different website. Now is the right time because
+    you've just spent four modules deep in XSS specifically — Module 09
+    shows you a related but distinct family of bug that exploits the same
+    "GET requests fire without confirmation" property Module 04 first
+    introduced.
+  </div>
+
+</div>
+
+<div class="wrap">
+  <footer>
+    <a href="../07_stored_xss_via_post/tutorial.html">&larr; Module 07 — Stored XSS via POST</a>
+    <a href="../09_csrf_via_get/tutorial.html">Module 09 — CSRF via GET &rarr;</a>
+  </footer>
+</div>
+
+</body>
+</html>
