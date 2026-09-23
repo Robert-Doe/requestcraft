@@ -17,7 +17,7 @@ app.innerHTML = `
     <h1>GET vs POST, Made Visible</h1>
     <p class="tagline">
       This course's own restaurant analogy: <strong>GET is reading the
-      menu</strong> &mdash; nothing in the kitchen changes. <strong>POST is
+      menu</strong>, nothing in the kitchen changes. <strong>POST is
       handing in an order ticket</strong> that changes what the kitchen
       does. Edit the fields below and watch exactly what each method sends,
       and where.
