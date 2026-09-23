@@ -1,12 +1,12 @@
 /**
- * request.ts — port of the request-encoding logic used throughout the
+ * request.ts, port of the request-encoding logic used throughout the
  * Requestcraft course's node/server.js files (modules 02–04), specifically
  * the hand-rolled `parseFormEncoded()` helper reused verbatim across every
  * module (see e.g. modules/03_forms_and_method_semantics/node/server.js).
  *
  * That helper DECODES application/x-www-form-urlencoded text. This file
- * provides its exact counterpart — a real ENCODER that produces the same
- * wire format — plus the two request shapes the course's Module 03
+ * provides its exact counterpart, a real ENCODER that produces the same
+ * wire format, plus the two request shapes the course's Module 03
  * ("Forms & Method Semantics") contrasts directly: a GET whose fields live
  * in the URL's query string, and a POST whose fields live in the body with
  * an unchanged URL.
@@ -20,7 +20,7 @@ export interface FormFields {
 /**
  * Encodes one component the way a browser encodes a real
  * application/x-www-form-urlencoded form: percent-encode via
- * encodeURIComponent, then turn %20 (space) into '+' — this is the exact
+ * encodeURIComponent, then turn %20 (space) into '+', this is the exact
  * inverse of parseFormEncoded()'s `.replace(/\+/g, ' ')` step in the
  * course's own node/server.js files.
  */
@@ -55,7 +55,7 @@ export interface RequestPreview {
 /**
  * Builds the exact request shape the course's Module 03 demonstrates:
  * GET puts the query string in the URL (visible in the address bar,
- * bookmarkable, and recorded in a real access log line — see
+ * bookmarkable, and recorded in a real access log line, see
  * accessLogLine() in the course's node/server.js); POST puts the data in
  * the body with the URL left unchanged, and a real access log records only
  * the method + path, never the body.

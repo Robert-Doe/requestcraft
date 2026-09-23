@@ -1,15 +1,15 @@
 /**
- * xss.ts — ports the exact vulnerable-then-fixed pattern from this course's
+ * xss.ts, ports the exact vulnerable-then-fixed pattern from this course's
  * own modules:
  *
  *   - modules/05_reflected_xss_via_get/node/server.js: vulnerableSearchPage()
  *     drops a raw, attacker-controllable value straight into an HTML
- *     template literal with zero encoding — the canonical reflected-XSS
+ *     template literal with zero encoding, the canonical reflected-XSS
  *     shape this course teaches.
  *
  *   - modules/11_output_encoding_defenses/tutorial.html: the fix is a single
  *     `encodeHtml()` call around that same value. The function below is
- *     copied field-for-field (same five replacements, same order — the
+ *     copied field-for-field (same five replacements, same order, the
  *     tutorial itself notes `&` MUST run first or the later replacements
  *     re-escape entities they just created).
  *
@@ -18,7 +18,7 @@
  * rendered only inside a sandboxed <iframe sandbox="allow-scripts"> (no
  * allow-same-origin) via srcdoc, so any script that does execute runs in an
  * opaque, cross-origin, cookie-less context that cannot touch this page,
- * this origin, or any visitor data — it can only postMessage a result back.
+ * this origin, or any visitor data, it can only postMessage a result back.
  */
 
 /** Ported verbatim from encodeHtml() in modules/11_output_encoding_defenses/tutorial.html. */
